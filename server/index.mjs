@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// My Office — local server.
+// CTS Office — local server.
 // Claude Code hooks POST every event to /event (loopback only). The server keeps one record per
 // open session (names come from ~/.claude/sessions/<pid>.json), strips anything that looks like a
 // secret, and streams compact events to the office page over Server-Sent Events.
@@ -157,7 +157,7 @@ setInterval(() => {
   viDirty = false;
   const keys = Object.keys(viCache);
   if (keys.length > 3000) for (const k of keys.slice(0, keys.length - 3000)) delete viCache[k];
-  fsp.writeFile(VI_FILE, JSON.stringify(viCache)).catch(() => {});
+  fsp.writeFile(VI_FILE, JSON.stringify(viCache)).catch(() => { });
 }, 15_000).unref();
 // One request per text at a time, three tries a few seconds apart (the free endpoint rate-limits in bursts).
 const viWait = new Map();
@@ -204,7 +204,7 @@ function imageId(file) {
   if (images.get(id) === abs) return id;
   images.set(id, abs);
   while (images.size > 400) images.delete(images.keys().next().value);
-  clearTimeout(imgSave); imgSave = setTimeout(() => fsp.mkdir(DATA_DIR, { recursive: true }).then(() => fsp.writeFile(IMG_FILE, JSON.stringify(Object.fromEntries(images)))).catch(() => {}), 2000);
+  clearTimeout(imgSave); imgSave = setTimeout(() => fsp.mkdir(DATA_DIR, { recursive: true }).then(() => fsp.writeFile(IMG_FILE, JSON.stringify(Object.fromEntries(images)))).catch(() => { }), 2000);
   return id;
 }
 async function classifyVi(name, input) {
@@ -260,7 +260,7 @@ try {
 setInterval(() => {
   if (!dirty) return;
   dirty = false;
-  fsp.writeFile(STATE_FILE, JSON.stringify({ stats, feed, seq })).catch(() => {});
+  fsp.writeFile(STATE_FILE, JSON.stringify({ stats, feed, seq })).catch(() => { });
 }, 10_000).unref();
 
 const trophies = createTrophies({ dataDir: DATA_DIR, claudeDir: CLAUDE_DIR, today, deployRe: DEPLOY_RE, tr, num, onChange: (t, earned) => broadcast({ k: 'trophies', t, earned }) });
@@ -330,7 +330,7 @@ async function ciFix(b, who) {
   const busy = !!s?.sid && s.pid && (s.status !== 'rest' || s.busy);
   const [code, out] = busy ? await steerTo({ sid: s.sid, text }, who) : await giveWork(s?.sid ? { sid: s.sid, text } : { dir: c.dir, text }, who);
   if (code === 200) chat.setCi(m.id, { fix: busy ? 'note' : 'sent' });
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ci fix ${c.repo}@${c.branch} from ${who}: ${code === 200 ? (busy ? 'note' : 'sent') : out?.code || code}\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ci fix ${c.repo}@${c.branch} from ${who}: ${code === 200 ? (busy ? 'note' : 'sent') : out?.code || code}\n`).catch(() => { });
   return [code, code === 200 ? { ok: true, how: busy ? 'note' : 'sent' } : out];
 }
 
@@ -347,8 +347,10 @@ setInterval(() => { if (watching()) git.pollCi(); }, 120_000).unref();
 function rollDay() { if (stats.day !== today()) stats = { day: today(), read: 0, edit: 0, cmd: 0, web: 0, prompts: 0, deploy: 0, commit: 0 }; }
 
 function newSession(key) {
-  return { id: crypto.randomUUID(), key, sid: null, pid: null, name: '', cwd: '', link: null, desk: freeDesk(), status: 'rest', busy: false,
-    lastPrompt: '', taskStart: 0, counts: { read: 0, edit: 0, cmd: 0, web: 0 }, subs: {}, last: null, fromFile: false, lastEventAt: 0, createdAt: Date.now() };
+  return {
+    id: crypto.randomUUID(), key, sid: null, pid: null, name: '', cwd: '', link: null, desk: freeDesk(), status: 'rest', busy: false,
+    lastPrompt: '', taskStart: 0, counts: { read: 0, edit: 0, cmd: 0, web: 0 }, subs: {}, last: null, fromFile: false, lastEventAt: 0, createdAt: Date.now()
+  };
 }
 function freeDesk() {
   const used = new Set([...sessions.values()].map((s) => s.desk));
@@ -356,7 +358,8 @@ function freeDesk() {
   return -1;
 }
 const pubSub = (x) => ({ id: x.id, type: x.type, desc: x.desc || '', last: x.last || null, startedAt: x.startedAt, endedAt: x.endedAt || null, steps: x.steps || 0, model: x.model || '' });
-const pub = (s) => ({ id: s.id, pid: s.pid, name: s.name, title: s.title || '', dir: tilde(s.cwd), link: s.link, desk: s.desk, status: s.status, lastPrompt: s.lastPrompt && oneLine(unwrapPaste(s.lastPrompt)),
+const pub = (s) => ({
+  id: s.id, pid: s.pid, name: s.name, title: s.title || '', dir: tilde(s.cwd), link: s.link, desk: s.desk, status: s.status, lastPrompt: s.lastPrompt && oneLine(unwrapPaste(s.lastPrompt)),
   agent: s.agent || 'claude', role: s.role || '', roleKind: s.roleKind || '',
   taskStart: s.taskStart, counts: s.counts, subs: Object.values(s.subs).map(pubSub), doneSubs: (s.doneSubs || []).map(pubSub), last: s.last, acct: acctOf(s),
   entry: s.entry || '', moved: s.parked ? { to: acctShown(s.parked.to), at: s.parked.at } : null,
@@ -368,7 +371,8 @@ const pub = (s) => ({ id: s.id, pid: s.pid, name: s.name, title: s.title || '', 
   pins: pinsOf(s.sid).length,
   undo: s.sid ? undo.info(s.sid) : null,
   git: gitOf(s),
-  usage: s.usage?.model ? { cost: Math.round(s.usage.cost * 100) / 100, ...liveCtx(s), model: s.usage.model, out: s.usage.out } : null });
+  usage: s.usage?.model ? { cost: Math.round(s.usage.cost * 100) / 100, ...liveCtx(s), model: s.usage.model, out: s.usage.out } : null
+});
 function gitOf(s) { const r = s.cwd && git.repoOf(s.cwd); return r ? { repo: r.name, branch: r.branch, dirty: r.dirty, ahead: r.ahead, ci: r.ci, ciName: r.ciName, ciUrl: r.ciUrl, born: r.born || null } : null; }
 // context: exact from the status line while it reports (last 15 min), else estimated from the transcript
 const liveCtx = (s) => (s.live?.ctxMax && s.live.ctx != null && Date.now() - s.live.at < 15 * 60e3 ? { ctx: s.live.ctx, ctxMax: s.live.ctxMax, exact: true } : { ctx: s.usage.ctx, ctxMax: ctxMax(s.usage) });
@@ -530,7 +534,7 @@ function todoOp(b) {
     case 'clear': todos = todos.filter((t) => !t.done); break;
     default: return tr('server.badRequest');
   }
-  fsp.writeFile(TODO_FILE, JSON.stringify(todos)).catch(() => {});
+  fsp.writeFile(TODO_FILE, JSON.stringify(todos)).catch(() => { });
   broadcast({ k: 'todos', todos });
   return null;
 }
@@ -576,8 +580,8 @@ function record(m) {
 function pruneReplay() {
   const cut = new Date(Date.now() - REPLAY_KEEP_DAYS * 86400e3).toLocaleDateString('sv-SE');
   fsp.readdir(REPLAY_DIR).then((names) => {
-    for (const n of names) if (/^\d{4}-\d{2}-\d{2}\.jsonl$/.test(n) && n.slice(0, 10) < cut) fsp.rm(path.join(REPLAY_DIR, n)).catch(() => {});
-  }).catch(() => {});
+    for (const n of names) if (/^\d{4}-\d{2}-\d{2}\.jsonl$/.test(n) && n.slice(0, 10) < cut) fsp.rm(path.join(REPLAY_DIR, n)).catch(() => { });
+  }).catch(() => { });
 }
 async function replayDays() {
   const out = [];
@@ -621,7 +625,7 @@ chat = createChatEngine({
   staffName: (key) => (STAFF_NAME[key] ? tr(STAFF_NAME[key]) : null),
   store: {
     load: () => { try { return JSON.parse(fs.readFileSync(CHAT_FILE, 'utf8')); } catch { return null; } },
-    save: (d) => { clearTimeout(chatSaveT); chatSaveT = setTimeout(() => { fsp.writeFile(`${CHAT_FILE}.tmp`, JSON.stringify(d)).then(() => fsp.rename(`${CHAT_FILE}.tmp`, CHAT_FILE)).catch(() => {}); }, 800); },
+    save: (d) => { clearTimeout(chatSaveT); chatSaveT = setTimeout(() => { fsp.writeFile(`${CHAT_FILE}.tmp`, JSON.stringify(d)).then(() => fsp.rename(`${CHAT_FILE}.tmp`, CHAT_FILE)).catch(() => { }); }, 800); },
   },
   emit: (op, x) => broadcast(op === 'typing' ? { k: 'chat', op, typing: x } : { k: 'chat', op, m: x, pinned: chat?.state.pinned ?? null }),
   act: (what) => broadcast({ k: 'chatact', what }),
@@ -669,9 +673,9 @@ const rewriter = createRewriter({ claude: () => findClaude(), env: () => { const
 /* ---------- notifications on the phones that said yes (server/push.mjs): Claude's answers, and an approval a run started
    from the office needs while nobody has the office open; none while an office page is looked at ---------- */
 const claudeVersion = createClaudeVersion({ dataDir: DATA_DIR });   // (Claude Code's version on this computer, server/claude-version.mjs)
-const push = createPush({ dataDir: DATA_DIR, log: (l) => fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${l}\n`).catch(() => {}) });
+const push = createPush({ dataDir: DATA_DIR, log: (l) => fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${l}\n`).catch(() => { }) });
 const QUICK_FILE = path.join(DATA_DIR, 'quick.json');   // the chat's quick commands, once you change them (shared by the Mac and the phones)
-const pushOut = (msg) => { if (push.count() && !officeFocused()) push.notify(msg).catch(() => {}); };
+const pushOut = (msg) => { if (push.count() && !officeFocused()) push.notify(msg).catch(() => { }); };
 
 /* Writing to a conversation from the chat ("Gửi tới"): the first message branches it (its whole context, the one open in
    your editor left as it is); what you write next carries on that branch, so it remembers what you said (for 6 hours). */
@@ -693,9 +697,9 @@ function attachCmd(t) {
 // (said once, with why), or waiting for you on the Mac (a prompt of its own, not one the office holds)
 function onBgTask(t, what, detail) {
   const card = cards.get(t.id), folder = path.basename(t.dir);
-  if (what === 'started') { if (card) chat.setWork(card.id, { attach: attachCmd(t) }); fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} task ${t.id} background session ${t.job}${t.copy ? ' (a copy)' : ''}\n`).catch(() => {}); return; }
+  if (what === 'started') { if (card) chat.setWork(card.id, { attach: attachCmd(t) }); fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} task ${t.id} background session ${t.job}${t.copy ? ' (a copy)' : ''}\n`).catch(() => { }); return; }
   if (what === 'fallback') {
-    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} task ${t.id} as claude -p (${detail})\n`).catch(() => {});
+    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} task ${t.id} as claude -p (${detail})\n`).catch(() => { });
     if (detail === 'untrusted') chat.system(tr('chat.task.bgUntrusted', { folder }));
     else if (detail !== 'old') chat.system(tr('chat.task.bgFailed', { folder }));   // (a Claude Code without them: the switch says so already)
     return;
@@ -746,7 +750,7 @@ async function parkForPhone(s) {
   if (!r?.closed?.length) { delete s.parked; fs.rmSync(pin, { force: true }); return { ok: false, message: tr('server.move.failed') }; }
   s.pid = null;
   chat.system(tr('chat.task.parked', { name }));
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone carries on ${name} (${s.sid})\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone carries on ${name} (${s.sid})\n`).catch(() => { });
   broadcast({ k: 'sess', s: pub(s) });
   return { ok: true };
 }
@@ -756,9 +760,11 @@ async function stopBgSession(s) {
   if (slug) e.CLAUDE_CONFIG_DIR = dirOfSlug(slug); else delete e.CLAUDE_CONFIG_DIR;
   return !!bin && bgRun.stop(bin.file, s.jobId, e);
 }
-const tasksOut = (local) => ({ ok: true, allowed: local || !!prefs.get('phoneTasks'), running: tasks.list(), bg: bgOut(),
+const tasksOut = (local) => ({
+  ok: true, allowed: local || !!prefs.get('phoneTasks'), running: tasks.list(), bg: bgOut(),
   projects: knownDirs.filter((d) => fs.existsSync(d)).map((d) => ({ dir: tilde(d), name: path.basename(d) })),
-  sessions: [...sessions.values()].filter((s) => s.sid && s.cwd).map((s) => ({ id: s.id, sid: s.sid, name: s.title || s.name, dir: tilde(s.cwd), status: s.status, cache: cacheOut(s) })) });
+  sessions: [...sessions.values()].filter((s) => s.sid && s.cwd).map((s) => ({ id: s.id, sid: s.sid, name: s.title || s.name, dir: tilde(s.cwd), status: s.status, cache: cacheOut(s) }))
+});
 
 /* ---------- what eats the plan (server/otel.mjs): Claude Code's own telemetry, received at /v1/metrics and /v1/logs
    ----------
@@ -790,8 +796,10 @@ function burnOut(range) {
   if (w && w.pct >= 1 && w.resetsAt > Date.now()) { const usd = otel.usdSince(w.resetsAt - 7 * 86400e3); if (usd >= 0.5) plan = { pct: w.pct, resetsAt: w.resetsAt, perUsd: w.pct / usd, name: planLimits.account?.plan || '' }; }
   const shown = r.sessions.slice(0, 40), rest = r.sessions.slice(40);
   const named = (x) => { const s = bySid(x.sid); return { ...x, name: s ? s.title || s.name : '', open: !!s, dir: tilde(x.cwd), cwd: undefined }; };
-  return { ok: true, ...r, sessions: shown.map(named), rest: { n: rest.length, usd: rest.reduce((a, x) => a + x.usd, 0), share: rest.reduce((a, x) => a + x.share, 0) },
-    projects: r.projects.map((p) => ({ ...p, dir: tilde(p.cwd), cwd: undefined })), setup: otelOwner({ settings, managed: managedEnvs() }).state, plan };
+  return {
+    ok: true, ...r, sessions: shown.map(named), rest: { n: rest.length, usd: rest.reduce((a, x) => a + x.usd, 0), share: rest.reduce((a, x) => a + x.share, 0) },
+    projects: r.projects.map((p) => ({ ...p, dir: tilde(p.cwd), cwd: undefined })), setup: otelOwner({ settings, managed: managedEnvs() }).state, plan
+  };
 }
 
 /* Giving work to a conversation or a project ("Gửi tới", 📋 Giao việc), from the chat, a phone, or a note kept for when
@@ -832,7 +840,7 @@ async function giveWork(b, who) {
     if (card) cards.set(r.task.id, { id: card.id, steps: [], n: 0, at: Date.now(), timer: 0 });
     taskQuote.set(r.task.id, mine ? { id: mine.id, name: tr('chat.boss'), text: clip(text, 90) } : null);
   } else chat.system(tr('chat.task.notStarted', { why: tr(`chat.task.why.${r.code}`) }));
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} message ${who} ${s ? `${s.sid}${from.acct ? ` on ${from.acct}` : ''}` : from.sid ? `carry ${from.sid}` : `new in ${pdir}`} ${r.ok ? 'started' : r.code} ${clip(oneLine(text), 100)}\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} message ${who} ${s ? `${s.sid}${from.acct ? ` on ${from.acct}` : ''}` : from.sid ? `carry ${from.sid}` : `new in ${pdir}`} ${r.ok ? 'started' : r.code} ${clip(oneLine(text), 100)}\n`).catch(() => { });
   return [r.ok ? 200 : 409, r.ok ? { ok: true, task: r.task } : { ok: false, code: r.code, message: tr(`chat.task.why.${r.code}`) }];
 }
 
@@ -855,7 +863,7 @@ async function steerTo(b, who) {
   const can = steerable({ inbox, mode: s?.mode || '', inbound: inboundFrom({ configDir: t?.env?.CLAUDE_CONFIG_DIR || (acct ? dirOfSlug(acct) : CLAUDE_DIR), cwd: s?.cwd || t?.dir }), isSocket });
   chat.say('me', `💬 @${name} ${text}`, { now: true, long: true });
   const now = can.ok && await deliver(inbox, tr('server.steer.note', { text }));
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} note ${who} ${t ? `task ${t.id}` : s?.sid || key} ${now ? 'delivered' : `kept (${can.ok ? 'failed' : can.why})`} ${clip(oneLine(text), 100)}\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} note ${who} ${t ? `task ${t.id}` : s?.sid || key} ${now ? 'delivered' : `kept (${can.ok ? 'failed' : can.why})`} ${clip(oneLine(text), 100)}\n`).catch(() => { });
   if (now) {
     if (t) cardStep(t.id, `💬 ${clip(redact(oneLine(text)), 70)}`);
     chat.system(tr('chat.steer.sent', { name }));
@@ -884,7 +892,7 @@ let knownDirs = []; try { knownDirs = JSON.parse(fs.readFileSync(DIRS_FILE, 'utf
 function noteDir(dir) {
   if (!dir || !path.isAbsolute(dir) || knownDirs[0] === dir) return;
   knownDirs = [dir, ...knownDirs.filter((d) => d !== dir)].slice(0, 30);
-  fsp.writeFile(DIRS_FILE, JSON.stringify(knownDirs)).catch(() => {});
+  fsp.writeFile(DIRS_FILE, JSON.stringify(knownDirs)).catch(() => { });
 }
 
 /* ---------- session discovery ---------- */
@@ -939,7 +947,7 @@ async function doScan() {
   for (const [key, s] of sessions) {
     if (s.fromFile && !live.has(key) && !(s.parked && Date.now() - s.parked.at < PARK_MS)) dropSession(key, s);   // (a moved one waits at its desk)
   }
-  await scanAgSessions().catch(() => {});
+  await scanAgSessions().catch(() => { });
 }
 
 /* ---------- Antigravity (Gemini) native brain session discovery & live transcript tailer ---------- */
@@ -1264,7 +1272,7 @@ async function onHook(p) {
   if (typeof p.role_kind === 'string') s.roleKind = clip(p.role_kind, 16);
   { const day = new Date(now).toLocaleDateString('sv'); if (ev !== 'SessionEnd' && s.dayFirst?.day !== day) s.dayFirst = { day, at: now }; }   // (its first sign of life each day: the lobby's attendance terminal)
   if (p.transcript_path) s.transcript = p.transcript_path;
-  if (ev !== 'SessionEnd') projectOf(s.cwd || p.cwd).then((name) => tenure.touch(name, { at: now, turn: ev === 'Stop', cwd: s.cwd || p.cwd })).catch(() => {});   // (its project's working life: server/tenure.mjs)
+  if (ev !== 'SessionEnd') projectOf(s.cwd || p.cwd).then((name) => tenure.touch(name, { at: now, turn: ev === 'Stop', cwd: s.cwd || p.cwd })).catch(() => { });   // (its project's working life: server/tenure.mjs)
   if (typeof p.permission_mode === 'string') s.mode = p.permission_mode;   // (one that skips permission prompts holds notes from elsewhere: server/steer.mjs)
   const run = runOf(sid, p.cwd, now); if (run && !s.viaOffice) s.viaOffice = run.id;   // (a run from the office: its card tells it)
   const bgTask = run?.mode === 'bg' ? run : null;   // (a background session: its card's steps and its answer come from here)
@@ -1515,10 +1523,10 @@ async function autoCloseIdle() {
   const size = sysBytes(r.closed.reduce((a, c) => a + c.mem, 0)), names = r.closed.map((c) => c.name).join(', ');
   const message = tr('server.sys.result.autoClosed', { n: r.closed.length, hours, names, size });
   autoLast.unshift({ at: Date.now(), n: r.closed.length, names, size }); autoLast.length = Math.min(autoLast.length, 5);
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} auto-close ${hours}h -> ${names}\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} auto-close ${hours}h -> ${names}\n`).catch(() => { });
   broadcast({ k: 'sysauto', message });
 }
-setInterval(() => { autoCloseIdle().catch(() => {}); }, 5 * 60_000).unref();
+setInterval(() => { autoCloseIdle().catch(() => { }); }, 5 * 60_000).unref();
 // The Mac's address on a Tailscale network (100.64.0.0/10), when it is on one: the office from anywhere, privately
 function tsUrl() {
   for (const n of Object.values(os.networkInterfaces()).flat()) {
@@ -1594,7 +1602,7 @@ button:disabled{opacity:.5;cursor:default}.err{color:#c0392b;margin:12px 0 0;fon
 function pinPage(res, code, msg = '', locked = false) {
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin' }).end(`<!doctype html>
-<html lang="${prefs.lang()}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Office</title><style>${PIN_CSS}</style></head>
+<html lang="${prefs.lang()}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CTS Office</title><style>${PIN_CSS}</style></head>
 <body><form class="card" method="post" action="/pin" autocomplete="off"><div class="ico">🏢</div><h1>${esc(tr('server.pin.title'))}</h1>
 <p>${esc(tr('server.pin.help'))}</p>
 <input name="pin" inputmode="numeric" pattern="\\d{6,10}" maxlength="10" autocomplete="one-time-code" required autofocus aria-label="${esc(tr('server.pin.label'))}" ${locked ? 'disabled' : ''}>
@@ -1623,8 +1631,10 @@ const macApprove = () => prefs.get('macApprove') !== false;
 const holdFor = () => holdMs({ focused: officeFocused(), barAlive: barWatch.alive(), idleSec: barWatch.idleSec(), pref: macApprove(), normalMs: HOLD_MS });
 const barHolds = () => !officeFocused() && holdFor() > 0;
 const pending = new Map();    // request id -> held request
-const permPub = (p) => ({ id: p.id, sess: p.sess, name: p.name, tool: p.tool, type: p.type, label: p.label, detail: p.detail, remember: p.remember, at: p.at, until: p.until,
-  kind: p.kind || 'perm', questions: p.questions, plan: p.plan });
+const permPub = (p) => ({
+  id: p.id, sess: p.sess, name: p.name, tool: p.tool, type: p.type, label: p.label, detail: p.detail, remember: p.remember, at: p.at, until: p.until,
+  kind: p.kind || 'perm', questions: p.questions, plan: p.plan
+});
 function settlePerm(id, body = '') {
   const p = pending.get(id); if (!p) return;
   pending.delete(id); clearTimeout(p.timer);
@@ -1666,17 +1676,23 @@ async function onPermission(p, res, long = false) {
   const c = await classifyVi(p.tool_name, p.tool_input);
   const suggestion = Array.isArray(p.permission_suggestions) ? p.permission_suggestions.find((x) => x && x.type === 'addRules' && x.behavior === 'allow') || null : null;
   const id = crypto.randomUUID(), now = Date.now();
-  const entry = { id, res, sess: s?.id || null, name: s?.name || base(p.cwd) || 'claude', tool: p.tool_name, type: c.type, label: c.label, detail: permDetail(p),
-    remember: suggestion ? ruleText(suggestion) : null, suggestion, at: now, until: long ? 0 : now + (hold || HOLD_MS), long, task: lh.task?.id || null };
+  const entry = {
+    id, res, sess: s?.id || null, name: s?.name || base(p.cwd) || 'claude', tool: p.tool_name, type: c.type, label: c.label, detail: permDetail(p),
+    remember: suggestion ? ruleText(suggestion) : null, suggestion, at: now, until: long ? 0 : now + (hold || HOLD_MS), long, task: lh.task?.id || null
+  };
   if (!long) entry.timer = setTimeout(() => settlePerm(id), hold || HOLD_MS);   // (the long one: until answered, or its hook gives up)
   pending.set(id, entry);
   res.on('close', () => { if (pending.get(id) === entry) { pending.delete(id); clearTimeout(entry.timer); broadcast({ k: 'permDone', id }); } });
   if (s && s.status !== 'wait') { s.status = 'wait'; broadcast({ k: 'sess', s: pub(s) }); }
   broadcast({ k: 'perm', p: permPub(entry) });
   if (ours || (long && prefs.get('phoneApprove'))) pushOut({ title: tr('server.push.permTitle', { name: entry.name }), body: clip(`${c.label}: ${oneLine(entry.detail)}`, 180), tag: `perm-${id}`, url: '/', urgent: true });
-  { const run = tasks.list().find((t) => t.sid === p.session_id || t.from?.sid === p.session_id), card = run && cards.get(run.id);
-    if (card) { card.wait = clip(`${c.label}: ${oneLine(entry.detail)}`, 120); chat.setWork(card.id, { state: 'wait', ask: card.wait, perm: id, risky: !!dangerKey(entry), steps: card.steps, n: card.n });   // (perm: its Allow / Deny buttons)
-      res.on('close', () => { if (cards.get(run.id) === card) { card.wait = null; chat.setWork(card.id, { state: 'work', ask: null, perm: null }); } }); } }
+  {
+    const run = tasks.list().find((t) => t.sid === p.session_id || t.from?.sid === p.session_id), card = run && cards.get(run.id);
+    if (card) {
+      card.wait = clip(`${c.label}: ${oneLine(entry.detail)}`, 120); chat.setWork(card.id, { state: 'wait', ask: card.wait, perm: id, risky: !!dangerKey(entry), steps: card.steps, n: card.n });   // (perm: its Allow / Deny buttons)
+      res.on('close', () => { if (cards.get(run.id) === card) { card.wait = null; chat.setWork(card.id, { state: 'work', ask: null, perm: null }); } });
+    }
+  }
 }
 
 /* ---------- "Ghi nhớ cho Claude": what you pin for a conversation (the session drawer's "Ghi nhớ" tab), said to Claude
@@ -1684,7 +1700,7 @@ async function onPermission(p, res, long = false) {
    SessionStart hook (matcher "compact") gets them as additionalContext. Kept by the conversation's id in
    data/pins.json, so they outlive the office starting again: 12 a conversation, 500 characters each, 300
    conversations. ---------- */
-const savePins = () => fsp.writeFile(PINS_FILE, JSON.stringify(pins)).catch(() => {});
+const savePins = () => fsp.writeFile(PINS_FILE, JSON.stringify(pins)).catch(() => { });
 const pinsOf = (sid) => (sid && pins[sid]?.list) || [];
 function pinsOut(s) { const p = (s?.sid && pins[s.sid]) || {}; return { ok: true, list: p.list || [], said: p.said || 0 }; }
 function pinOp(b, s) {
@@ -1708,7 +1724,7 @@ async function onStart(p) {
   const list = pinsOf(p.session_id); if (!list.length) return null;
   pins[p.session_id].said = Date.now(); savePins();
   const s = bySid(p.session_id); if (s) chat.system(tr('chat.pins.said', { name: s.title || s.name, n: list.length }));
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} pins said again ${p.session_id} (${list.length})\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} pins said again ${p.session_id} (${list.length})\n`).catch(() => { });
   return { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: `${tr('server.pins.context')}\n${list.map((x) => `- ${x.text}`).join('\n')}` } };
 }
 
@@ -1726,7 +1742,7 @@ async function onDenied(p, res) {
   const shell = p?.tool_name === 'Bash' || p?.tool_name === 'PowerShell';
   const cmd = clip(redact(String(shell ? p.tool_input?.command || '' : JSON.stringify(p?.tool_input || {}))), 2000);
   const m = s ? chat.denyCard(s.id, { sess: s.id, tool: p.tool_name || '', label: loopLabel(p.tool_name, p.tool_input), cmd, shell, reason, retry: canRetry, state: hold ? 'held' : 'kept', until: hold ? Date.now() + DENY_HOLD_MS : 0 }) : null;
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} denied ${p?.session_id || '?'} ${clip(oneLine(cmd), 100)} ${reason}${hold ? ' (held)' : ''}\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} denied ${p?.session_id || '?'} ${clip(oneLine(cmd), 100)} ${reason}${hold ? ' (held)' : ''}\n`).catch(() => { });
   if (!hold || !m) { res.writeHead(200).end(''); return; }
   let timer = 0;
   const settle = (retry) => {
@@ -1757,7 +1773,7 @@ async function undoAct(b, who) {
   if (!r.done.length) return [409, { ok: false, message: tr('server.undo.nothing') }];
   chat.system(tr('chat.undo.done', { name: s.title || s.name, n: r.done.length }));
   broadcast({ k: 'sess', s: pub(s) });
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} undo ${s.sid} from ${who}: ${r.done.map((x) => `${x.action} ${x.file}`).join(', ')}\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} undo ${s.sid} from ${who}: ${r.done.map((x) => `${x.action} ${x.file}`).join(', ')}\n`).catch(() => { });
   return [200, { ok: true, done: r.done.map((x) => ({ ...x, file: tilde(x.file) })), after: tilde(r.after || '') }];
 }
 
@@ -1779,8 +1795,10 @@ async function onQuestion(p, res, long = false) {
     const qs = Array.isArray(i.questions) ? i.questions.slice(0, 4) : [];
     if (!qs.length) { res.writeHead(200).end(''); return; }
     Object.assign(entry, { kind: 'ask', type: 'ask', label: tr('server.tool.ask') });
-    entry.questions = qs.map((q) => ({ question: txt(q.question, 400), header: txt(q.header, 30), multi: !!q.multiSelect,
-      options: (Array.isArray(q.options) ? q.options.slice(0, 6) : []).map((o) => ({ label: txt(o.label, 80), description: txt(o.description, 240) })) }));
+    entry.questions = qs.map((q) => ({
+      question: txt(q.question, 400), header: txt(q.header, 30), multi: !!q.multiSelect,
+      options: (Array.isArray(q.options) ? q.options.slice(0, 6) : []).map((o) => ({ label: txt(o.label, 80), description: txt(o.description, 240) }))
+    }));
     entry.detail = entry.questions.map((q) => q.question).join('\n');
   } else {
     Object.assign(entry, { kind: 'plan', type: 'plan', label: tr('server.tool.plan') });
@@ -1848,7 +1866,7 @@ function onLoop(s, sig) {
     const m = chat.loopCard(s.id, { ...s.stuck, state: 'on', hint: sig.hint ? 'got' : null, sess: s.id, task: run?.id || null });
     if (m) { loopCards.delete(s.id); loopCards.set(s.id, { id: m.id }); if (loopCards.size > 16) loopCards.delete(loopCards.keys().next().value); }
     pushOut({ title: tr('server.loop.pushTitle', { name }), body: clip(loopLine(s.stuck, name), 180), tag: `loop-${s.id}`, url: '/?chat' });
-    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} stuck ${st.kind} ${s.sid} ${clip(oneLine(st.label || ''), 80)}${st.blocked ? ' (denied)' : ''}\n`).catch(() => {});
+    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} stuck ${st.kind} ${s.sid} ${clip(oneLine(st.label || ''), 80)}${st.blocked ? ' (denied)' : ''}\n`).catch(() => { });
   } else if (sig.type === 'blocked') {
     if (s.stuck) { s.stuck.blocked = sig.stuck.blocked; broadcast({ k: 'sess', s: pub(s) }); }
     setCard({ blocked: sig.stuck.blocked, ...(sig.hint && { hint: 'got' }) });
@@ -1900,7 +1918,7 @@ async function portClash(s, sid, port) {
   const holder = !d ? tr('server.overlap.someone') : d.owner?.name ? tr('server.overlap.holderOf', { label: d.label, owner: d.owner.name, up: sysDur(d.up) }) : tr('server.overlap.holder', { label: d.label, up: sysDur(d.up) });
   chat.system(tr('chat.overlap.port', { name: s.title || s.name, port, holder }));
   overlap.note(sid, tr('server.overlap.port', { port, holder }));
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} port ${port} clash ${sid}${d ? ` held by pid ${d.pid}` : ''}\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} port ${port} clash ${sid}${d ? ` held by pid ${d.pid}` : ''}\n`).catch(() => { });
 }
 // Stop and a hint from the card (any page that may give work: the Mac, a phone when it is allowed)
 function loopAct(b, mac) {
@@ -1911,7 +1929,7 @@ function loopAct(b, mac) {
     if (run) { const ok = tasks.stop(run.id); if (ok && card) chat.setLoop(card.id, { state: 'stopped' }); return { ok, how: 'task' }; }
     if (s.status === 'rest') return { ok: false, code: 'resting', message: tr('server.loop.resting', { name: s.title || s.name }) };
     loops.stop(s.sid); if (card) chat.setLoop(card.id, { state: 'stopping' });
-    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} stuck stop ${s.sid} from ${mac ? 'mac' : 'phone'}\n`).catch(() => {});
+    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} stuck stop ${s.sid} from ${mac ? 'mac' : 'phone'}\n`).catch(() => { });
     return { ok: true, how: 'next' };
   }
   if (b.op === 'hint') {
@@ -1920,7 +1938,7 @@ function loopAct(b, mac) {
     if (s.status === 'rest') return { ok: false, code: 'resting', sid: s.sid };
     if (!loops.hint(s.sid, oneLine(b.text))) return { ok: false, code: 'empty' };
     if (card) chat.setLoop(card.id, { hint: 'sent' });
-    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} stuck hint ${s.sid} from ${mac ? 'mac' : 'phone'}\n`).catch(() => {});
+    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} stuck hint ${s.sid} from ${mac ? 'mac' : 'phone'}\n`).catch(() => { });
     return { ok: true };
   }
   return { ok: false };
@@ -1941,7 +1959,7 @@ function setLimits(windows, source, account = planLimits?.account || null) {
   const moved = sig(planLimits) !== sig(next);
   planLimits = next;
   if (moved) { broadcast({ k: 'limits', limits: limitsOut(), note: '' }); repick(); }
-  fsp.writeFile(LIMITS_FILE, JSON.stringify(planLimits)).catch(() => {});
+  fsp.writeFile(LIMITS_FILE, JSON.stringify(planLimits)).catch(() => { });
 }
 // A window's label is words: "5 h", "Week", "Opus (week)" (weekOf: the model). Written when a reading arrives and again
 // each time the limits are sent, so a reading saved before a language switch reads in the new language.
@@ -1949,8 +1967,10 @@ const winLabel = (w) => clip(String(w.key === 'session' ? tr('server.limits.five
 function limitsOut() {
   const l = planLimits, more = othersOut(), main = { label: acctLabel(''), until: blockedUntil(l?.windows, hits.get('')), auto: autoOut() };
   if (!l) return more.length ? { windows: [], others: more, ...main } : l;
-  return { ...l, windows: Array.isArray(l.windows) ? l.windows.map((w) => ({ ...w, label: winLabel(w) })) : l.windows,
-    five: l.five && { ...l.five, label: tr('server.limits.fiveHour') }, seven: l.seven && { ...l.seven, label: tr('server.limits.week') }, others: more, ...main };
+  return {
+    ...l, windows: Array.isArray(l.windows) ? l.windows.map((w) => ({ ...w, label: winLabel(w) })) : l.windows,
+    five: l.five && { ...l.five, label: tr('server.limits.fiveHour') }, seven: l.seven && { ...l.seven, label: tr('server.limits.week') }, others: more, ...main
+  };
 }
 function onStatus(p) {
   if (!p || typeof p !== 'object') return;
@@ -2103,7 +2123,7 @@ function scanAccounts() {
    transcript (30 days by default). Every account's projects folder, read 90 s after the office starts, then every 3
    hours; searched and read from the vault drawer (ui/vault.js). OFFICE_VAULT=0 turns it off. ---------- */
 const vault = process.env.OFFICE_VAULT === '0' ? null : createVault({ dir: path.join(DATA_DIR, 'vault'), claudeDirs: () => [CLAUDE_DIR, ...otherDirs], log: (s) => console.log(s) });
-if (vault) { setTimeout(() => vault.scan().catch(() => {}), 90_000).unref(); setInterval(() => vault.scan().catch(() => {}), 3 * 3600e3).unref(); }
+if (vault) { setTimeout(() => vault.scan().catch(() => { }), 90_000).unref(); setInterval(() => vault.scan().catch(() => { }), 3 * 3600e3).unref(); }
 // what the drawer shows (secrets masked, as everywhere the office shows what was typed)
 const vaultItem = (x) => ({ ...x, title: redact(x.title), first: redact(x.first), cwd: tilde(x.cwd), ...(x.snip && { snip: redact(x.snip) }) });
 async function vaultOut(q, mac) {
@@ -2112,7 +2132,7 @@ async function vaultOut(q, mac) {
     const rec = await vault.get(String(q.get('sid'))); if (!rec) return { ok: false };
     return { ok: true, rec: { ...rec, title: redact(rec.title), cwd: tilde(rec.cwd), msgs: rec.msgs.map((m) => ({ ...m, t: redact(m.t) })) } };
   }
-  if (mac && q.has('fresh')) await vault.scan().catch(() => {});   // (read again now: the Mac's own button, and the tests)
+  if (mac && q.has('fresh')) await vault.scan().catch(() => { });   // (read again now: the Mac's own button, and the tests)
   const items = (await vault.search(String(q.get('q') || '').slice(0, 200))).map(vaultItem);
   return { ok: true, stats: vault.stats(), items };
 }
@@ -2136,14 +2156,16 @@ setInterval(async () => {
   if (r?.ok && r.now.n >= 10) chat.system(tr('chat.report.monday', { pct: r.now.pct, delta: delta(r.now.pct, r.prev.pct) || '–', n: r.now.n }));
 }, 30 * 60e3).unref();
 function othersOut() {
-  return otherDirs.map((d) => { const o = others.get(d) || {}, slug = accName(d);
-    return { name: slug, label: acctLabel(slug), until: blockedUntil(o.windows, hits.get(slug)), at: o.at || 0, account: o.account || null, expired: !!o.expired, renewing: renewing.has(d), windows: (o.windows || []).map((w) => ({ ...w, label: winLabel(w) })), note: o.note ? tr(...o.note) : '' }; });
+  return otherDirs.map((d) => {
+    const o = others.get(d) || {}, slug = accName(d);
+    return { name: slug, label: acctLabel(slug), until: blockedUntil(o.windows, hits.get(slug)), at: o.at || 0, account: o.account || null, expired: !!o.expired, renewing: renewing.has(d), windows: (o.windows || []).map((w) => ({ ...w, label: winLabel(w) })), note: o.note ? tr(...o.note) : '' };
+  });
 }
 const otherBusy = new Map();
 const OTHERS_FILE = path.join(DATA_DIR, 'others-usage.json');
 function saveOthers() {
   const keep = Object.fromEntries([...others].filter(([, o]) => o.windows).map(([d, o]) => [d, { windows: o.windows, at: o.at, account: o.account }]));
-  fsp.writeFile(OTHERS_FILE, JSON.stringify(keep)).catch(() => {});
+  fsp.writeFile(OTHERS_FILE, JSON.stringify(keep)).catch(() => { });
 }
 try { for (const [d, o] of Object.entries(JSON.parse(fs.readFileSync(OTHERS_FILE, 'utf8')))) others.set(d, { ...o }); } catch { /* none yet */ }
 /* An account nobody has used for a while: its sign-in token has run out (Claude Code renews it only while it runs), and
@@ -2164,7 +2186,7 @@ function refreshLogin(dir) {
     const child = execFile(bin.file, ['-p', '--model', 'haiku', '--no-session-persistence', '--strict-mcp-config', '--tools', '', '--settings', '{"disableAllHooks":true}', 'Reply with the single word: ok'],
       { cwd, env: { ...process.env, CLAUDE_CONFIG_DIR: dir }, timeout: 90_000, maxBuffer: 1 << 20 }, (err) => resolve(!err));
     child.stdin?.end();   // (-p reads stdin too: nothing comes)
-  }).then(async (ok) => { const now = await OS.claudeLogin(dir).catch(() => null); fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} renew login ${accName(dir)} -> ${now?.accessToken && !dead(now) ? 'renewed' : 'failed'}${ok ? '' : ' (its run ended in an error)'}\n`).catch(() => {}); return ok; })
+  }).then(async (ok) => { const now = await OS.claudeLogin(dir).catch(() => null); fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} renew login ${accName(dir)} -> ${now?.accessToken && !dead(now) ? 'renewed' : 'failed'}${ok ? '' : ' (its run ended in an error)'}\n`).catch(() => { }); return ok; })
     .finally(() => renewing.delete(dir));
   renewing.set(dir, run);
   return run;
@@ -2259,7 +2281,7 @@ function startLogin(slug) {
   logins.set(slug, L);
   let out = '';
   const seen = (d) => { out = (out + d).slice(-4000); const m = !L.url && /visit:\s*(https:\/\/\S+)/.exec(out); if (m) { L.url = m[1]; pushLogin(L); } };
-  L.child.stdout.on('data', seen); L.child.stderr.on('data', seen); L.child.stdin.on('error', () => {});
+  L.child.stdout.on('data', seen); L.child.stderr.on('data', seen); L.child.stdin.on('error', () => { });
   const look = setInterval(() => { try { const u = fs.readFileSync(urlFile, 'utf8').trim(); if (u && u !== L.url) { L.url = u; pushLogin(L); } } catch { /* not yet */ } }, 500);
   const stop = setTimeout(() => L.child.kill(), 15 * 60e3);
   L.child.on('error', () => { L.state = 'failed'; L.note = tr('server.account.noCli'); });
@@ -2356,7 +2378,7 @@ function writeNow(dir) {
 function repick(why = 'auto') {
   if (!switching()) { if (nowDir) writeNow(''); return; }
   const all = [{ slug: '', dir: '', until: blockedUntil(planLimits?.windows, hits.get('')) },
-    ...otherDirs.map((d) => ({ slug: accName(d), dir: d, until: blockedUntil(others.get(d)?.windows, hits.get(accName(d))) }))];
+  ...otherDirs.map((d) => ({ slug: accName(d), dir: d, until: blockedUntil(others.get(d)?.windows, hits.get(accName(d))) }))];
   const order = orderOf(), list = [...all].sort((a, b) => order.indexOf(a.slug) - order.indexOf(b.slug));
   const cur = all.find((a) => a.dir === nowDir), next = !prefs.get('autoSwitch') ? list[0] : list.find((a) => !a.until) || cur || list[0];
   if (next.dir === nowDir && fs.existsSync(NOW_FILE)) return;
@@ -2381,10 +2403,12 @@ function limitHit(slug) {
 // file, from adding the account, gives way to the main settings, which carry the same hooks)
 function shareWithMain(dir) {
   if (!otherDirs.includes(dir)) return;
-  const officeOnly = (f) => { try {
-    const own = JSON.parse(fs.readFileSync(f, 'utf8')), main = fs.readFileSync(path.join(CLAUDE_DIR, 'settings.json'), 'utf8');
-    return Object.keys(own).every((k) => ['hooks', 'statusLine', '$schema'].includes(k)) && main.includes(`:${PORT}/event`);
-  } catch { return false; } };
+  const officeOnly = (f) => {
+    try {
+      const own = JSON.parse(fs.readFileSync(f, 'utf8')), main = fs.readFileSync(path.join(CLAUDE_DIR, 'settings.json'), 'utf8');
+      return Object.keys(own).every((k) => ['hooks', 'statusLine', '$schema'].includes(k)) && main.includes(`:${PORT}/event`);
+    } catch { return false; }
+  };
   for (const n of SHARED) {
     const from = path.join(CLAUDE_DIR, n), to = path.join(dir, n);
     if (!fs.existsSync(from)) continue;
@@ -2412,7 +2436,7 @@ function switchScript() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(SWITCH_FILE, [
     '#!/bin/sh',
-    '# My Office: Claude Code started on the account the office picked (the plan card). The editor passes the claude',
+    '# CTS Office: Claude Code started on the account the office picked (the plan card). The editor passes the claude',
     '# program first (claudeCode.claudeProcessWrapper). A CLAUDE_CONFIG_DIR set already is kept. A conversation the office',
     '# moved to another account (its id in data/resume-on) starts on that one when the editor resumes it.',
     'if [ -z "$CLAUDE_CONFIG_DIR" ]; then',
@@ -2556,13 +2580,15 @@ async function moveNow(s, to, why) {
   if (!r?.closed?.length) { delete s.parked; fs.rmSync(pin, { force: true }); return { ok: false, message: tr('server.move.failed') }; }
   s.pid = null;
   chat.onMoved(s.id, acctShown(to));
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} move ${name} ${from || 'main'} -> ${to || 'main'} (${why})\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} move ${name} ${from || 'main'} -> ${to || 'main'} (${why})\n`).catch(() => { });
   broadcast({ k: 'sess', s: pub(s) });
   return { ok: true, name, to: acctShown(to), message: tr('server.move.done', { name, to: acctShown(to) }) };
 }
 // a moved conversation going on by itself on the new account (server/auto-resume.mjs)
-const autoResume = createAutoResume({ findClaude, dirOfSlug, prefs, pinDir: PIN_DIR, spawn, prompt: () => tr('server.move.resumePrompt'),
-  log: (msg) => fsp.appendFile(ACTION_LOG, msg).catch(() => {}) });
+const autoResume = createAutoResume({
+  findClaude, dirOfSlug, prefs, pinDir: PIN_DIR, spawn, prompt: () => tr('server.move.resumePrompt'),
+  log: (msg) => fsp.appendFile(ACTION_LOG, msg).catch(() => { })
+});
 // switching on: the editor's conversations resting on an account out for a while (not a short rate limit) move to the
 // one new sessions start on now, if it has room. Called a few seconds after the account ran out (the session that
 // hit the limit needs a moment to rest), and once more a little later for one that was still finishing.
@@ -2577,10 +2603,10 @@ async function autoMove(slug) {
   }
   if (moved.length) broadcast({ k: 'acctmove', names: moved, from: acctShown(slug), to: acctShown(to) });
 }
-function autoMoveSoon(slug) { for (const ms of [5000, 30000]) setTimeout(() => { autoMove(slug).catch(() => {}); }, ms).unref(); }
+function autoMoveSoon(slug) { for (const ms of [5000, 30000]) setTimeout(() => { autoMove(slug).catch(() => { }); }, ms).unref(); }
 // and every minute while an account stays out: a conversation that was busy when it ran out (a long turn, agents of its
 // own running in the background) moves as soon as it comes to rest
-setInterval(() => { for (const slug of ['', ...otherDirs.map(accName)]) if (untilOf(slug) - Date.now() >= 15 * 60e3) autoMove(slug).catch(() => {}); }, 60_000).unref();
+setInterval(() => { for (const slug of ['', ...otherDirs.map(accName)]) if (untilOf(slug) - Date.now() >= 15 * 60e3) autoMove(slug).catch(() => { }); }, 60_000).unref();
 // a parked conversation started again (the same id, a new process): the note is spent. Notes left for a day go.
 function unpark(s) {
   if (!s.parked) return;
@@ -2681,8 +2707,8 @@ async function agLaunch({ quiet = false } = {}) {
   if (ok && (back || (cli && wins.length))) {
     setTimeout(async () => {
       if (cli) for (const p of wins) await new Promise((r) => execFile(cli, [p], { timeout: 20_000 }, () => r()));
-      if (back) execFile('open', ['-a', back], { timeout: 10_000 }, () => {});
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} antigravity: ${wins.length} windows opened again${back ? `, ${back} back in front` : ''}\n`).catch(() => {});
+      if (back) execFile('open', ['-a', back], { timeout: 10_000 }, () => { });
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} antigravity: ${wins.length} windows opened again${back ? `, ${back} back in front` : ''}\n`).catch(() => { });
     }, 8000).unref();
   }
   return ok;
@@ -2729,13 +2755,15 @@ function panelOut() {
   const working = list.filter((s) => s.status === 'work').length, waiting = list.filter((s) => s.status === 'wait').length;
   // the requests held now, for the notification banners (a risky command gets no "allow" there: the office asks twice)
   const held = [...pending.values()].map((p) => ({ id: p.id, kind: p.kind || 'perm', sess: p.sess, name: p.name, tool: p.tool, detail: clip(oneLine(p.kind === 'plan' ? p.detail : p.kind === 'ask' ? p.questions?.[0]?.question || '' : `${p.label}: ${p.detail}`), 120), risky: (p.kind || 'perm') === 'perm' && !!dangerKey(p), until: p.until }));
-  return { ok: true, working, waiting, held, level: top >= 95 ? 'critical' : top >= 80 ? 'warn' : 'ok', sessions: list,
+  return {
+    ok: true, working, waiting, held, level: top >= 95 ? 'critical' : top >= 80 ? 'warn' : 'ok', sessions: list,
     summary: [working && tr('panel.working', { n: working }), waiting && tr('panel.waiting', { n: waiting })].filter(Boolean).join(' · ') || tr('panel.quiet'),
-    words: { allow: tr('panel.bar.allow'), deny: tr('panel.bar.deny'), ide: tr('panel.bar.ide'), answer: tr('panel.bar.answer'), window: tr('panel.bar.window'), plan: tr('panel.bar.plan'), wait: tr('panel.bar.wait'), done: tr('panel.bar.done'), open: tr('panel.open3d'), list: tr('panel.open2d'), quit: tr('panel.bar.quit'), off: tr('panel.offline') } };
+    words: { allow: tr('panel.bar.allow'), deny: tr('panel.bar.deny'), ide: tr('panel.bar.ide'), answer: tr('panel.bar.answer'), window: tr('panel.bar.window'), plan: tr('panel.bar.plan'), wait: tr('panel.bar.wait'), done: tr('panel.bar.done'), open: tr('panel.open3d'), list: tr('panel.open2d'), quit: tr('panel.bar.quit'), off: tr('panel.offline') }
+  };
 }
-const MENUBAR_APP = path.join(DATA_DIR, 'menubar', 'My Office.app');
+const MENUBAR_APP = path.join(DATA_DIR, 'menubar', 'CTS Office.app');
 if (process.platform === 'darwin' && process.env.OFFICE_MENUBAR !== '0' && fs.existsSync(MENUBAR_APP)) {
-  execFile('pgrep', ['-f', 'My Office.app/Contents/MacOS/MyOfficeBar'], (err) => { if (err) execFile('open', ['-g', MENUBAR_APP, '--args', String(PORT)], () => {}); });
+  execFile('pgrep', ['-f', 'CTS Office.app/Contents/MacOS/MyOfficeBar'], (err) => { if (err) execFile('open', ['-g', MENUBAR_APP, '--args', String(PORT)], () => { }); });
 }
 codex?.start(); ag?.start();
 
@@ -2888,12 +2916,12 @@ const server = http.createServer((req, res) => {
     readForm(req).then((f) => {
       if (sameBytes(String(f.get('pin') || '').replace(/\D/g, ''), currentPin())) {
         pinFails.delete(ip);
-        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} pin ok ${ip}${f.get('keep') === '1' ? ' remembered' : ''}\n`).catch(() => {});
+        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} pin ok ${ip}${f.get('keep') === '1' ? ' remembered' : ''}\n`).catch(() => { });
         res.writeHead(303, { Location: '/', 'Set-Cookie': pinCookie(req, f.get('keep') === '1'), 'Cache-Control': 'no-store' }).end();
         return;
       }
       const left = pinFailed(ip);
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} pin wrong ${ip}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} pin wrong ${ip}\n`).catch(() => { });
       const lockedNow = pinLockedUntil(ip);
       if (lockedNow) pinPage(res, 429, lockMsg(lockedNow), true);
       else pinPage(res, 401, tr('server.pin.wrong', { n: left }));
@@ -2926,7 +2954,7 @@ const server = http.createServer((req, res) => {
       const out = p.kind === 'ask' ? askDecision(p, b) : p.kind === 'plan' ? planDecision(p, b.choice, b.note) : permDecision(p, b.choice);
       if (!out) { json(res, 400, { ok: false, message: tr('server.api.answerAll') }); return; }
       settlePerm(p.id, JSON.stringify(out));
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${phone ? `phone ${clientIp(req)} ` : ''}${p.kind || 'perm'} ${b.choice} ${p.name} ${p.tool} ${p.kind === 'perm' || !p.kind ? p.detail.slice(0, 120) : ''}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${phone ? `phone ${clientIp(req)} ` : ''}${p.kind || 'perm'} ${b.choice} ${p.name} ${p.tool} ${p.kind === 'perm' || !p.kind ? p.detail.slice(0, 120) : ''}\n`).catch(() => { });
       json(res, 200, { ok: true });
     });
     return;
@@ -2939,14 +2967,14 @@ const server = http.createServer((req, res) => {
       // the PIN it has now, as on the PIN page (wrong ones count toward the same lock), then one that isn't easy to guess
       if (!sameBytes(String(b?.current || '').replace(/\D/g, ''), currentPin())) {
         const left = pinFailed(ip), lockedNow = pinLockedUntil(ip);
-        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone pin change wrong ${ip}\n`).catch(() => {});
+        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone pin change wrong ${ip}\n`).catch(() => { });
         json(res, 200, { ok: false, message: lockedNow ? lockMsg(lockedNow) : tr('server.pin.wrong', { n: left }) }); return;
       }
       const own = String(b?.pin || '').replace(/\s/g, '');
       if (pinWeak(own)) { json(res, 200, { ok: false, message: tr('server.pin.weak') }); return; }
       pinFails.delete(ip);
       fs.writeFileSync(PIN_FILE, own, { mode: 0o600 });
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone pin set ${ip}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone pin set ${ip}\n`).catch(() => { });
       // this phone stays in (a new cookie, signed with the new PIN); every other one is cut off once the answer has gone
       res.on('finish', () => { for (const srv of [...lanServers.values(), tunnel.srv]) srv?.closeAllConnections?.(); });
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Set-Cookie': pinCookie(req) }).end(JSON.stringify({ ok: true }));
@@ -2962,12 +2990,12 @@ const server = http.createServer((req, res) => {
         if (own && pinWeak(own)) { json(res, 200, { ok: false, message: tr('server.pin.weak') }); return; }   // (turned down, not an error: the page shows why)
         fs.writeFileSync(PIN_FILE, own || String(crypto.randomInt(0, 1e6)).padStart(6, '0'), { mode: 0o600 });
         for (const srv of [...lanServers.values(), tunnel.srv]) srv?.closeAllConnections?.();
-        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone pin ${own ? 'set' : 'new'}\n`).catch(() => {});
+        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone pin ${own ? 'set' : 'new'}\n`).catch(() => { });
         json(res, 200, { ok: true, pin: currentPin() });
         return;
       }
       if (!lanFixed) { prefs.set('lan', b?.on ? true : undefined); syncLan(); }
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone lan ${b?.on ? 'on' : 'off'}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone lan ${b?.on ? 'on' : 'off'}\n`).catch(() => { });
       const on = lanIsOn();
       json(res, 200, { ok: true, on, fixed: lanFixed, lan: on ? lanUrl() : null, lanBase: on ? lanUrl(false) : null, ts: on ? tsUrl() : null, pin: currentPin() });
     });
@@ -2988,10 +3016,10 @@ const server = http.createServer((req, res) => {
       const op = String(b?.op || ''), endpoint = String(b?.endpoint || b?.sub?.endpoint || '');
       if (op === 'add') {
         if (!push.add(b?.sub, req.headers['user-agent'])) { json(res, 400, { ok: false }); return; }
-        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} push on ${isLoopback(req) ? 'mac' : clientIp(req)} ${new URL(endpoint).host}\n`).catch(() => {});
+        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} push on ${isLoopback(req) ? 'mac' : clientIp(req)} ${new URL(endpoint).host}\n`).catch(() => { });
       } else if (op === 'remove') push.remove(endpoint);
       else if (op === 'report') {   // a phone that couldn't turn them on: why, for looking into it
-        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} push trouble ${clip(oneLine(String(b?.why || '')), 20)} ${clip(oneLine(String(b?.detail || '')), 160)} ${isLoopback(req) ? 'mac' : clientIp(req)} ${clip(oneLine(String(req.headers['user-agent'] || '')), 120)}\n`).catch(() => {});
+        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} push trouble ${clip(oneLine(String(b?.why || '')), 20)} ${clip(oneLine(String(b?.detail || '')), 160)} ${isLoopback(req) ? 'mac' : clientIp(req)} ${clip(oneLine(String(req.headers['user-agent'] || '')), 120)}\n`).catch(() => { });
       } else if (op === 'test') {
         const st = await push.test(endpoint || (isLoopback(req) ? '' : 'none'), { title: tr('server.push.testTitle'), body: tr('server.push.testBody'), tag: 'test', url: '/' });
         json(res, 200, { ok: st.length > 0 && st.every((x) => x >= 200 && x < 300), statuses: st, count: push.count() }); return;
@@ -3007,14 +3035,14 @@ const server = http.createServer((req, res) => {
       if (url.pathname === '/api/tasks/allow') {
         if (!mac) { json(res, 403, { ok: false, message: tr('server.api.approveOnMac') }); return; }
         prefs.set('phoneTasks', b?.on ? true : undefined);
-        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} tasks from phones ${b?.on ? 'on' : 'off'}\n`).catch(() => {});
+        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} tasks from phones ${b?.on ? 'on' : 'off'}\n`).catch(() => { });
         broadcast({ k: 'phone', approve: !!prefs.get('phoneApprove'), tasks: !!b?.on });
         json(res, 200, tasksOut(true)); return;
       }
       if (url.pathname === '/api/tasks/bg') {   // phone work as background sessions (server/bg-sessions.mjs): on the Mac only
         if (!mac) { json(res, 403, { ok: false, message: tr('server.api.approveOnMac') }); return; }
         prefs.set('phoneTasksBg', b?.on ? true : undefined);
-        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone work as background sessions ${b?.on ? 'on' : 'off'}\n`).catch(() => {});
+        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone work as background sessions ${b?.on ? 'on' : 'off'}\n`).catch(() => { });
         await bgRun.probe(findClaude()).catch(() => null);
         json(res, 200, tasksOut(true)); return;
       }
@@ -3033,7 +3061,7 @@ const server = http.createServer((req, res) => {
     if (!mac && !prefs.get('phoneTasks')) { json(res, 403, { ok: false, code: 'notAllowed', message: tr('chat.task.notAllowed') }); return; }
     readJson(req, 40_000).then(async (b) => {
       const r = await rewriter.rewrite({ text: b?.text, lang: pickLang(b?.lang), photos: b?.photos });
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} rewrite ${mac ? 'mac' : `phone ${clientIp(req)}`} ${r.ok ? 'ok' : r.code} ${String(b?.text || '').length} chars\n`).catch(() => {});   // (how long, never what it says)
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} rewrite ${mac ? 'mac' : `phone ${clientIp(req)}`} ${r.ok ? 'ok' : r.code} ${String(b?.text || '').length} chars\n`).catch(() => { });   // (how long, never what it says)
       json(res, r.ok ? 200 : r.code === 'busy' || r.code === 'tooMany' ? 429 : 409, r.ok ? { ok: true, text: r.text } : { ok: false, code: r.code, message: tr(`chat.coach.why.${r.code}`, { detail: r.detail || '' }) });
     });
     return;
@@ -3051,9 +3079,11 @@ const server = http.createServer((req, res) => {
       else if (op === 'photo' && mac && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(String(b.data || '')) && b.data.length < 500_000) chat.photo(b.data);
       else if (op === 'say' && mac) {
         const photo = /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(String(b.photo || '')) && b.photo.length < 500_000 ? b.photo : null;
-        chat.say(str(b.from, 60), str(b.text, 600), { key: str(b.key, 120) || undefined, sticker: Number.isInteger(b.sticker) ? b.sticker : undefined, photo, pin: !!b.pin, delay: Number.isFinite(b.delay) ? Math.min(60_000, Math.max(0, b.delay)) : undefined,
+        chat.say(str(b.from, 60), str(b.text, 600), {
+          key: str(b.key, 120) || undefined, sticker: Number.isInteger(b.sticker) ? b.sticker : undefined, photo, pin: !!b.pin, delay: Number.isFinite(b.delay) ? Math.min(60_000, Math.max(0, b.delay)) : undefined,
           react: (Array.isArray(b.react) ? b.react : []).filter((e) => REACTIONS.includes(e)), reacts: Math.min(6, Number(b.reacts) || 2),
-          answer: (Array.isArray(b.answer) ? b.answer : []).slice(0, 4).map((a) => ({ key: str(a?.key, 30).replace(/[^\w]/g, ''), chance: Math.min(1, Math.max(0, Number(a?.chance ?? 1))) })).filter((a) => a.key) });
+          answer: (Array.isArray(b.answer) ? b.answer : []).slice(0, 4).map((a) => ({ key: str(a?.key, 30).replace(/[^\w]/g, ''), chance: Math.min(1, Math.max(0, Number(a?.chance ?? 1))) })).filter((a) => a.key)
+        });
       } else { json(res, 400, { ok: false }); return; }
       json(res, 200, { ok: true });
     });
@@ -3063,7 +3093,7 @@ const server = http.createServer((req, res) => {
     if (!isLoopback(req) || !sameOriginOf(req) || !String(req.headers['content-type'] || '').startsWith('application/json')) { json(res, 403, { ok: false, message: tr('server.api.approveOnMac') }); return; }
     readJson(req).then((b) => {
       const ok = setRcAtStartup(!!b?.on);
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} remote control at startup ${b?.on ? 'on' : 'off'} -> ${ok ? 'ok' : 'failed'}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} remote control at startup ${b?.on ? 'on' : 'off'} -> ${ok ? 'ok' : 'failed'}\n`).catch(() => { });
       json(res, ok ? 200 : 500, { ok, rc: rcAtStartup() });
     });
     return;
@@ -3079,7 +3109,7 @@ const server = http.createServer((req, res) => {
     if (req.method === 'GET') { Promise.race([bgRun.probe(findClaude()).catch(() => null), new Promise((r) => setTimeout(r, 4000))]).then(() => json(res, 200, tunnelOut())); return; }   // (whether this Claude Code has background sessions: looked at once)
     readJson(req).then((b) => {
       prefs.set('tunnel', b?.on ? true : undefined);
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} tunnel ${b?.on ? 'on' : 'off'}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} tunnel ${b?.on ? 'on' : 'off'}\n`).catch(() => { });
       if (b?.on) startTunnel(); else stopTunnel();
       json(res, 200, tunnelOut());
     });
@@ -3090,7 +3120,7 @@ const server = http.createServer((req, res) => {
     if (!isLoopback(req) || !sameOrigin || !String(req.headers['content-type'] || '').startsWith('application/json')) { json(res, 403, { ok: false, message: tr('server.api.approveOnMac') }); return; }
     readJson(req).then((b) => {
       prefs.set('phoneApprove', b?.approve ? true : undefined);
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone approve ${b?.approve ? 'on' : 'off'}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} phone approve ${b?.approve ? 'on' : 'off'}\n`).catch(() => { });
       broadcast({ k: 'phone', approve: !!b?.approve, tasks: !!prefs.get('phoneTasks') });
       json(res, 200, { ok: true, approve: !!b?.approve });
     });
@@ -3101,9 +3131,9 @@ const server = http.createServer((req, res) => {
     if (!authorized(req, url) || !sameOrigin || !String(req.headers['content-type'] || '').startsWith('application/json')) { json(res, 403, { ok: false, message: tr('server.forbidden') }); return; }
     readJson(req).then((b) => {
       if (!b || !prefs.setAutoClose(Number(b.hours))) { json(res, 400, { ok: false, message: tr('server.badRequest') }); return; }
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${req.socket.remoteAddress} auto-close ${prefs.autoClose()}h\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${req.socket.remoteAddress} auto-close ${prefs.autoClose()}h\n`).catch(() => { });
       json(res, 200, { ok: true, hours: prefs.autoClose() });
-      autoCloseIdle().catch(() => {});
+      autoCloseIdle().catch(() => { });
     });
     return;
   }
@@ -3114,7 +3144,7 @@ const server = http.createServer((req, res) => {
       if (!body) { json(res, 400, { ok: false, message: tr('server.badRequest') }); return; }
       if (body.action === 'closeIdle' && Array.isArray(body.items)) closingOnPurpose(body.items.map((i) => Number(i?.target)).filter((n) => n > 0));   // (closed from the Mac panel: no red line in the editor)
       const result = await sysAction(body).catch((err) => ({ ok: false, message: String(err.message || err) }));
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${req.socket.remoteAddress} ${JSON.stringify(body)} -> ${JSON.stringify(result)}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${req.socket.remoteAddress} ${JSON.stringify(body)} -> ${JSON.stringify(result)}\n`).catch(() => { });
       json(res, 200, result);
     });
     return;
@@ -3131,7 +3161,7 @@ const server = http.createServer((req, res) => {
       if (!p || (p.kind || 'perm') !== 'perm' || !['allow', 'deny', 'skip'].includes(choice)) { json(res, 404, { ok: false, message: tr('server.api.expired') }); return; }
       if (choice === 'allow' && dangerKey(p)) { json(res, 403, { ok: false, message: tr('server.api.riskyOnMac') }); return; }   // (a risky command: two clicks, in the office)
       if (choice === 'skip') settlePerm(p.id); else settlePerm(p.id, JSON.stringify(permDecision(p, choice)));
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} notification perm ${choice} ${p.name} ${p.tool} ${p.detail.slice(0, 120)}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} notification perm ${choice} ${p.name} ${p.tool} ${p.detail.slice(0, 120)}\n`).catch(() => { });
       json(res, 200, { ok: true });
     });
     return;
@@ -3142,7 +3172,7 @@ const server = http.createServer((req, res) => {
     readJson(req).then((b) => {
       prefs.set('macApprove', b?.on === false ? false : undefined);
       if (b?.on === false && !officeFocused()) for (const [id, x] of [...pending]) if (!x.long) settlePerm(id);   // (nobody else holds them now)
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} mac notification approve ${macApprove() ? 'on' : 'off'}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} mac notification approve ${macApprove() ? 'on' : 'off'}\n`).catch(() => { });
       json(res, 200, { ok: true, on: macApprove() });
     });
     return;
@@ -3161,7 +3191,7 @@ const server = http.createServer((req, res) => {
     readJson(req).then(async (b) => {
       const s = [...sessions.values()].find((x) => x.id === String(b?.id || ''));
       const r = await openWindow(s);
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} open ${s?.name || '?'} -> ${r.ok ? r.app : r.message}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} open ${s?.name || '?'} -> ${r.ok ? r.app : r.message}\n`).catch(() => { });
       json(res, 200, r);
     });
     return;
@@ -3172,11 +3202,11 @@ const server = http.createServer((req, res) => {
       const w = stranded.entry(b?.id);
       if (url.pathname === '/api/stranded/open') {
         const r = w ? await openFolder(w.path) : { ok: false, message: tr('mac.stranded.gone') };
-        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} open folder ${w?.path || '?'} -> ${r.ok ? r.app || 'ok' : r.message}\n`).catch(() => {});
+        fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} open folder ${w?.path || '?'} -> ${r.ok ? r.app || 'ok' : r.message}\n`).catch(() => { });
         json(res, 200, r); return;
       }
       const r = await stranded.remove(b?.id);
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} remove worktree ${r.w?.path || '?'} -> ${r.ok ? 'removed' : `${r.code}${r.why ? ` ${r.why}` : ''}`}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} remove worktree ${r.w?.path || '?'} -> ${r.ok ? 'removed' : `${r.code}${r.why ? ` ${r.why}` : ''}`}\n`).catch(() => { });
       const at = r.w ? tilde(r.w.path) : '';
       json(res, 200, r.ok ? { ok: true, message: tr(r.w.branch ? 'mac.stranded.removed' : 'mac.stranded.removedDetached', { dir: at, branch: r.w.branch }) }
         : { ok: false, code: r.code, message: tr(`mac.stranded.refused.${r.code}`, { why: r.why || '' }) });
@@ -3285,7 +3315,7 @@ const server = http.createServer((req, res) => {
       const settle = deniedHeld.get(String(b?.id || ''));
       if (!settle) { json(res, 409, { ok: false, message: tr('server.deny.over') }); return; }
       settle(b?.op === 'retry');
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} denied ${b?.op === 'retry' ? 'retry' : 'keep'} from ${mac ? 'mac' : 'phone'}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} denied ${b?.op === 'retry' ? 'retry' : 'keep'} from ${mac ? 'mac' : 'phone'}\n`).catch(() => { });
       json(res, 200, { ok: true });
     });
     return;
@@ -3327,7 +3357,7 @@ const server = http.createServer((req, res) => {
       if (!mac) { json(res, 403, { ok: false, message: tr('server.api.approveOnMac') }); return; }
       const now = loopConfig(), next = { on: b.on === undefined ? now.on : !!b.on, n: LOOP_N.includes(b.n) ? b.n : now.n, min: LOOP_MIN.includes(b.min) ? b.min : now.min };
       prefs.set('loopGuard', next);
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} stuck guard ${next.on ? 'on' : 'off'} n=${next.n} min=${next.min}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} stuck guard ${next.on ? 'on' : 'off'} n=${next.n} min=${next.min}\n`).catch(() => { });
       json(res, 200, loopOut());
     });
     return;
@@ -3347,7 +3377,7 @@ const server = http.createServer((req, res) => {
     if (!isLoopback(req) || !sameOriginOf(req) || !String(req.headers['content-type'] || '').startsWith('application/json')) { json(res, 403, { ok: false, message: tr('server.api.approveOnMac') }); return; }
     readJson(req).then((b) => {
       prefs.set('cacheNudge', b?.nudge ? true : undefined);
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} cache nudge ${b?.nudge ? 'on' : 'off'}\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} cache nudge ${b?.nudge ? 'on' : 'off'}\n`).catch(() => { });
       json(res, 200, { ok: true, nudge: !!prefs.get('cacheNudge') });
     });
     return;
@@ -3402,9 +3432,11 @@ const server = http.createServer((req, res) => {
   // everything as it is now, the first message a page gets (the Mac's own addresses and PIN only for the Mac)
   const snapNow = (local) => {
     const lanOn = lanIsOn();
-    return { k: 'snap', lang: prefs.lang(), sessions: [...sessions.values()].map(pub), perms: [...pending.values()].map(permPub), feed, stats, local, todos, limits: limitsOut(), limitsNote: noteText(), ai: aiOut(), trophies: trophies.pub(),
+    return {
+      k: 'snap', lang: prefs.lang(), sessions: [...sessions.values()].map(pub), perms: [...pending.values()].map(permPub), feed, stats, local, todos, limits: limitsOut(), limitsNote: noteText(), ai: aiOut(), trophies: trophies.pub(),
       lan: local && lanOn ? lanUrl() : null, lanBase: local && lanOn ? lanUrl(false) : null, pin: local ? currentPin() : null,
-      ts: local && lanOn ? tsUrl() : null, tsHere: !!tsUrl(), phoneApprove: !!prefs.get('phoneApprove'), phoneTasks: !!prefs.get('phoneTasks'), lanFixed: local && lanFixed, build: BUILD, lift: liftService.pub() };
+      ts: local && lanOn ? tsUrl() : null, tsHere: !!tsUrl(), phoneApprove: !!prefs.get('phoneApprove'), phoneTasks: !!prefs.get('phoneTasks'), lanFixed: local && lanFixed, build: BUILD, lift: liftService.pub()
+    };
   };
   if (url.pathname === '/stream') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
@@ -3537,9 +3569,11 @@ setInterval(syncLan, 30_000).unref();
    Off: cloudflared stops and the listener closes, cutting off whoever was in. OFFICE_TUNNEL_CMD: a stand-in (tests). */
 const tunnel = { state: 'off', url: '', host: '', error: '', pid: 0, srv: null, port: 0, tries: 0, gen: 0, watch: null };
 const TUNNEL_PID = path.join(DATA_DIR, 'tunnel.pid'), CF_BIN = path.join(DATA_DIR, 'bin', process.platform === 'win32' ? 'cloudflared.exe' : 'cloudflared');
-const tunnelOut = () => ({ ok: true, on: !!prefs.get('tunnel'), state: tunnel.state, url: tunnel.url, error: tunnel.error, port: tunnel.port, pin: currentPin(),
+const tunnelOut = () => ({
+  ok: true, on: !!prefs.get('tunnel'), state: tunnel.state, url: tunnel.url, error: tunnel.error, port: tunnel.port, pin: currentPin(),
   awake: process.platform === 'darwin' ? { held: !!awakeProc, ac: powerAC } : null, rc: rcAtStartup(), tasks: !!prefs.get('phoneTasks'), bg: bgOut(),
-  fixed: namedTunnel()?.host || '', domain: domainJob && { state: domainJob.state, host: domainJob.host, note: domainJob.note } });
+  fixed: namedTunnel()?.host || '', domain: domainJob && { state: domainJob.state, host: domainJob.host, note: domainJob.note }
+});
 // Giving Claude work from a phone is Claude Code's own Remote Control: with remoteControlAtStartup in its settings every
 // new session opens its bridge by itself (the other accounts share these settings by a link), and the office shows each
 // session's link. Switched in the phone window, by you, on the Mac; the rest of the file is left as it is.
@@ -3576,7 +3610,7 @@ function setModels({ main, sub, force, split }) {
     if (split) for (const d of otherDirs) shareWithMain(d);   // (an account added before there was a CLAUDE.md: linked now)
   }
   const out = modelsOut();
-  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} models main=${out.main || 'default'} sub=${out.sub || 'same'}${out.force ? ' (forced)' : ''} split=${out.split ? 'on' : 'off'}\n`).catch(() => {});
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} models main=${out.main || 'default'} sub=${out.sub || 'same'}${out.force ? ' (forced)' : ''} split=${out.split ? 'on' : 'off'}\n`).catch(() => { });
   return out;
 }
 // While the tunnel is on, the Mac stays awake so it can be reached (macOS): `caffeinate -s` holds off system sleep on the
@@ -3672,7 +3706,7 @@ function setTunnelDomain(host) {
     const r = await run(['tunnel', 'route', 'dns', NAMED, host], 60e3);
     if (!r.ok && !/already configured to route to your tunnel/i.test(r.err + r.out)) { fail(/already exists/i.test(r.err + r.out) ? 'server.tunnel.hostTaken' : 'server.tunnel.routeFailed', { host }); return; }
     prefs.set('tunnelNamed', { id, host, cred });
-    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} tunnel fixed address ${host}\n`).catch(() => {});
+    fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} tunnel fixed address ${host}\n`).catch(() => { });
     step('done');
     again();
   })().catch((e) => fail('server.tunnel.routeFailed', { host: String(e?.message || e).slice(0, 80) }));
@@ -3701,7 +3735,7 @@ function tunnelUp(pid, url) {
   tunnel.watch = setInterval(() => {   // (it may drop: the network went away, Cloudflare closed it; again, later each time)
     if (tunnel.pid && alive(tunnel.pid) && !namedTunnel() && tunnelRevoked()) {   // (taken back but still running: stopped here, started again below)
       tunnel.revoked = tunnel.url;
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} tunnel taken back by Cloudflare ${tunnel.url} -> a new address\n`).catch(() => {});
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} tunnel taken back by Cloudflare ${tunnel.url} -> a new address\n`).catch(() => { });
       try { process.kill(tunnel.pid, 'SIGTERM'); } catch { /* gone */ }
       return;
     }
@@ -3770,7 +3804,7 @@ server.listen(PORT, HOST, () => {
   syncLan();
   if (prefs.get('tunnel')) startTunnel(); else killStaleTunnel();
   scanSessions();
-  scanCleanups().catch(() => {});   // macOS paths; elsewhere there may be nothing to scan
+  scanCleanups().catch(() => { });   // macOS paths; elsewhere there may be nothing to scan
   trackOwners();
   startTrend();
   console.log(tr('server.console.listening', { port: PORT, phone: HOST === '127.0.0.1' ? tr('server.console.lanOff') : lanUrl(false) || tr('server.console.noLan') }));

@@ -162,14 +162,16 @@ test('the group chat: people post, a poll, @ someone and they answer, a reply, r
   await page.goto('/?demo&debug&layout=pro');
   await expect(page.locator('#lite .v2-row').first()).toBeVisible({ timeout: 60_000 });
   type Eng = { poll: (from: string, q: string, o: string[]) => void, remind: (from: string, t: string, at: number, rep: string) => void };
-  type Chat = { chat: { msgs: { kind: string, from: string, text: string }[] }, chatSay: (from: string, text: string, o?: object) => void, chatEngine: () => Eng,
-    sessions: Map<string, { id: string, name: string, title?: string }>, pauseDemo: () => void };
+  type Chat = {
+    chat: { msgs: { kind: string, from: string, text: string }[] }, chatSay: (from: string, text: string, o?: object) => void, chatEngine: () => Eng,
+    sessions: Map<string, { id: string, name: string, title?: string }>, pauseDemo: () => void
+  };
   await page.waitForFunction(() => !!(window as unknown as { __office?: { chat?: unknown } }).__office?.chat);
   await page.evaluate(() => (window as unknown as { __office: Chat }).__office.pauseDemo());
   await page.click('#btn-chat');
   const zc = page.locator('#zchat');
   await expect(zc).toBeVisible();
-  await expect(zc.locator('.zc-title b')).toHaveText('My Office team');
+  await expect(zc.locator('.zc-title b')).toHaveText('CTS Office team');
   await expect(zc.locator('.zc-sub')).toContainText('members');
   // a poll (pinned): you vote
   await page.evaluate(() => (window as unknown as { __office: Chat }).__office.chatEngine().poll('reception', 'Lunch?', ['Phở', 'Bún bò', 'Cơm tấm']));
@@ -524,9 +526,12 @@ test('giving Claude work from the chat: a folder or a tagged conversation, the r
 });
 
 // The handful of debug hooks (?debug) the reaction tests read: who is doing what, and the floor lamps.
-type Person = { station: string, phase: string, chore?: { thing?: unknown, gathering?: unknown }, deliver: () => void, reset: () => void, anim: string, goHomeNow: () => void,
-  onBreak?: boolean, doze?: boolean, carry?: string };
-type DebugOffice = { director: Person, workers: Map<string, Person>, floorLamps: { on: boolean }[], PROPS: Map<string, unknown>, activateProp: (p: unknown) => void,
+type Person = {
+  station: string, phase: string, chore?: { thing?: unknown, gathering?: unknown }, deliver: () => void, reset: () => void, anim: string, goHomeNow: () => void,
+  onBreak?: boolean, doze?: boolean, carry?: string
+};
+type DebugOffice = {
+  director: Person, workers: Map<string, Person>, floorLamps: { on: boolean }[], PROPS: Map<string, unknown>, activateProp: (p: unknown) => void,
   sessions: Map<string, object>, upsert: (s: object) => void, pauseDemo: () => void, speed: (n: number) => void,
   street?: unknown, goOut: (kind: string, key?: string) => boolean, outing: { stage: string, id?: string, shop?: string, item?: string } | null,
   fp: { street: boolean, pos?: { set: (x: number, z: number) => void }, yaw?: number }, fpToStreet: () => void, limitOut: (min: number) => void, napOn: boolean,
@@ -535,7 +540,8 @@ type DebugOffice = { director: Person, workers: Map<string, Person>, floorLamps:
   attendance?: () => { terminal: boolean, log: Record<string, { name: string, at: string, out: string | null, inferred: boolean }>, earliest: string, screen: string, tabs: string, pending: string[] },
   birthday?: () => boolean, party?: { banner: boolean, members: number, slices: number } | false,
   testRun: (ok?: boolean, i?: number) => string | false, commit: (i?: number) => string | false, push: (i?: number) => string | false, tests: Record<string, string>,
-  post: { inBox: number, today: number, trip: boolean, postman: { offstage: boolean, carry?: string } | null } };
+  post: { inBox: number, today: number, trip: boolean, postman: { offstage: boolean, carry?: string } | null }
+};
 type Win = { __office?: DebugOffice };   // (written out in each evaluate: the page cannot see this file's functions)
 
 test('switch off the director’s lamp after dark and the director switches it back on', async ({ page }) => {
@@ -546,7 +552,7 @@ test('switch off the director’s lamp after dark and the director switches it b
   await page.goto('/?demo&debug&layout=pro&at=22:00');
   await page.waitForFunction(() => (window as unknown as Win).__office?.director, null, { timeout: 30_000 });   // (no side list this narrow)
   // keep the director at the desk (the demo keeps handing out work): no more deliveries, and back in his chair
-  await page.evaluate(() => { const d = (window as unknown as Win).__office!.director; d.deliver = () => {}; d.reset(); });
+  await page.evaluate(() => { const d = (window as unknown as Win).__office!.director; d.deliver = () => { }; d.reset(); });
   const lampOn = () => page.evaluate(() => (window as unknown as Win).__office!.floorLamps[0].on);
   expect(await lampOn()).toBe(true);
   await page.evaluate(() => { const o = (window as unknown as Win).__office!; o.activateProp(o.PROPS.get('lamp0')); });
@@ -752,9 +758,13 @@ test('going home by the street shows in the session list', async ({ page }) => {
 });
 
 // the accountant, the director's rounds and the guard (people/accountant.js, rounds.js, guard.js): their debug hooks
-type Staffed = { __office?: { workers?: unknown, sessions: Map<string, object>, upsert: (s: object) => void, pauseDemo: () => void, speed: (n: number) => void,
-  accountant?: { atDesk: boolean, x: number, job: string | null, warn: string }, report: () => boolean, budgetWarn: () => boolean,
-  rounds: () => boolean, round: { stage: string } | null, guard?: () => { night: boolean, gate: number, booth: number[] } } };
+type Staffed = {
+  __office?: {
+    workers?: unknown, sessions: Map<string, object>, upsert: (s: object) => void, pauseDemo: () => void, speed: (n: number) => void,
+    accountant?: { atDesk: boolean, x: number, job: string | null, warn: string }, report: () => boolean, budgetWarn: () => boolean,
+    rounds: () => boolean, round: { stage: string } | null, guard?: () => { night: boolean, gate: number, booth: number[] }
+  }
+};
 
 test('the accountant takes the day’s cost report to the director and asks the top spender to go easy near the limit', async ({ page }) => {
   test.setTimeout(150_000);
@@ -1008,8 +1018,10 @@ test('walking into the Mixue: the red front and its Snow King, a cone ordered at
 });
 
 // shredder.js and foosball.js add their own hooks (?debug)
-type Paper = { compactNow: (i?: number) => string | null, paperwork: () => { levels: number[], shredder: { fill: number } | null, carrying: string[] },
-  pingpong: () => boolean, foos: { ready: boolean, over: boolean, score: number[], ball: number[], players: string[] } | null };
+type Paper = {
+  compactNow: (i?: number) => string | null, paperwork: () => { levels: number[], shredder: { fill: number } | null, carrying: string[] },
+  pingpong: () => boolean, foos: { ready: boolean, over: boolean, score: number[], ball: number[], players: string[] } | null
+};
 type WinP = { __office?: DebugOffice & Paper };
 
 test('a compaction: the desk\'s stack of paper goes to the shredder and the desk starts again', async ({ page }) => {

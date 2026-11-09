@@ -1,7 +1,7 @@
 // The company's group chat (ui/group-chat.js): the window, and what people write in it. An array is several ways to
 // say the same thing, one picked at random.
 export default {
-  group: 'Công ty My Office',
+  group: 'Công ty CTS Office',
   open: 'Nhóm chat',
   openTitle: 'Nhóm chat của công ty: mọi người nhắn về việc đang làm (chỉ trên máy này, không gửi cho Claude)',
   members: '{n} thành viên',
@@ -15,7 +15,7 @@ export default {
   yesterday: 'Hôm qua',
   claudeTag: 'Claude',
   notifyBar: '🔔 Bật thông báo để biết ngay khi Claude trả lời, kể cả lúc khoá máy.',
-  notifyBarInstall: '🔔 Muốn được báo khi Claude trả lời? Thêm My Office vào màn hình chính trước.',
+  notifyBarInstall: '🔔 Muốn được báo khi Claude trả lời? Thêm CTS Office vào màn hình chính trước.',
   notifyBarBtn: 'Bật',
   conv: { open: 'Xem cả cuộc trò chuyện', back: 'Về nhóm', gone: 'Cuộc trò chuyện này không còn mở trên Mac.', summary: '📄 Tóm tắt phần trước (bấm để xem)' },
   quick: {
@@ -81,8 +81,10 @@ export default {
     agWaiting: '⏳ Antigravity: {from} đã hết lượt. Sẽ chuyển sang {to} lúc bạn rời máy một lúc, hoặc khi bạn tắt {app}.',
     agAway: '🔁 Trong lúc bạn rời máy, {app} đã chuyển sang {to} ({from} hết hoặc sắp hết lượt). Cửa sổ, tab và hội thoại Claude vẫn như cũ.',
   },
-  card: { stopped: 'Đã dừng', allow: 'Cho phép', deny: 'Từ chối', stop: '⏹ Dừng', askHere: '⏳ {what}', risky: 'Lệnh nguy hiểm: chỉ cho phép được trên Mac.', work: 'Đang làm', wait: 'Chờ bạn duyệt', done: 'Xong', fail: 'Gặp lỗi', meta: '{n} bước · {took}', ask: '⏳ {what} · thẻ duyệt hiện ở dưới (45 giây)', all: 'Xem cả {n} bước', show: 'Xem {n} bước đã làm', none: 'Không cần làm bước nào',
-    attach: 'Về Mac gõ {cmd} để làm tiếp', waitMac: { perm: 'Đang chờ bạn duyệt ngay trên Mac', input: 'Đang chờ bạn trả lời ngay trên Mac', other: 'Đang chờ bạn trên Mac' } },
+  card: {
+    stopped: 'Đã dừng', allow: 'Cho phép', deny: 'Từ chối', stop: '⏹ Dừng', askHere: '⏳ {what}', risky: 'Lệnh nguy hiểm: chỉ cho phép được trên Mac.', work: 'Đang làm', wait: 'Chờ bạn duyệt', done: 'Xong', fail: 'Gặp lỗi', meta: '{n} bước · {took}', ask: '⏳ {what} · thẻ duyệt hiện ở dưới (45 giây)', all: 'Xem cả {n} bước', show: 'Xem {n} bước đã làm', none: 'Không cần làm bước nào',
+    attach: 'Về Mac gõ {cmd} để làm tiếp', waitMac: { perm: 'Đang chờ bạn duyệt ngay trên Mac', input: 'Đang chờ bạn trả lời ngay trên Mac', other: 'Đang chờ bạn trên Mac' }
+  },
   steer: {
     btn: '💬 Chen lời',
     bar: 'Chen lời cho {name}',
@@ -154,7 +156,7 @@ export default {
     subNew: '📁 {folder} · phiên mới, Claude làm thật',
     subMine: '📁 {folder} · đang tiếp phiên mới của bạn',
     nudgeOn: '🔔 Muốn điện thoại báo ngay khi Claude trả lời? Bật thông báo ở ⚙ → Khác → 📱.',
-    nudgeInstall: '🔔 Muốn được báo khi Claude trả lời? Thêm My Office vào màn hình chính (nút Chia sẻ → Thêm vào MH chính), rồi bật thông báo ở ⚙ → Khác → 📱.',
+    nudgeInstall: '🔔 Muốn được báo khi Claude trả lời? Thêm CTS Office vào màn hình chính (nút Chia sẻ → Thêm vào MH chính), rồi bật thông báo ở ⚙ → Khác → 📱.',
     label: 'Gửi tới',
     group: 'Cả nhóm',
     groupSub: 'Trò chuyện vui trong nhóm, không gửi cho Claude',

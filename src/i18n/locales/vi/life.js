@@ -72,7 +72,7 @@ export default {
     sign: 'ĐANG BẢO TRÌ',
     sorry: 'Xin lỗi quý khách vì sự bất tiện',
     stickerHead: 'ĐÃ KIỂM ĐỊNH',
-    stickerWhat: 'My Office v{version}',
+    stickerWhat: 'CTS Office v{version}',
     stickerDate: 'Ngày {date}',
     stickerNo: 'Số tem: {no}',
     tech: 'Kỹ thuật thang máy',

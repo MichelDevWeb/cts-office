@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// My Office command line: start the server, add/remove the Claude Code hooks, install the login service, and
+// CTS Office command line: start the server, add/remove the Claude Code hooks, install the login service, and
 // check that everything is wired ("doctor"). Settings are backed up before every change and written atomically.
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
@@ -119,13 +119,13 @@ async function install() {
    is what macOS shows on its notifications. macOS remembers an app's logo for notifications by its identifier the first
    time it meets it: the first builds had no logo, so it kept a blank square under com.my-office.menubar however the
    app changed. Hence a new identifier; changing the logo again later needs another one. */
-const MENUBAR_APP = path.join(dataDir(ROOT, {}), 'menubar', 'My Office.app'), MENUBAR_BIN = 'My Office.app/Contents/MacOS/MyOfficeBar';
+const MENUBAR_APP = path.join(dataDir(ROOT, {}), 'menubar', 'CTS Office.app'), MENUBAR_BIN = 'CTS Office.app/Contents/MacOS/MyOfficeBar';
 const PLIST = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key><string>com.my-office.bar</string>
-  <key>CFBundleName</key><string>My Office</string>
-  <key>CFBundleDisplayName</key><string>My Office</string>
+  <key>CFBundleName</key><string>CTS Office</string>
+  <key>CFBundleDisplayName</key><string>CTS Office</string>
   <key>CFBundleExecutable</key><string>MyOfficeBar</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>

@@ -31,16 +31,16 @@ function trophyParts(kind, metal) {   // [geometry, colour, metal?] standing on 
     case 'cup': {
       const bowl = new THREE.LatheGeometry([[0.012, 0], [0.05, 0.02], [0.062, 0.06], [0.064, 0.1], [0.06, 0.1]].map(([x, y]) => new THREE.Vector2(x, y)), 24);
       return [...base, [new THREE.CylinderGeometry(0.035, 0.045, 0.02, 20).translate(0, 0.06, 0), metal, true], [new THREE.CylinderGeometry(0.01, 0.014, 0.06, 10).translate(0, 0.1, 0), metal, true],
-        [bowl.translate(0, 0.13, 0), metal, true], ...[-1, 1].map((sx) => [new THREE.TorusGeometry(0.026, 0.006, 6, 14, Math.PI).rotateZ(-sx * Math.PI / 2).translate(sx * 0.062, 0.18, 0), metal, true])];
+      [bowl.translate(0, 0.13, 0), metal, true], ...[-1, 1].map((sx) => [new THREE.TorusGeometry(0.026, 0.006, 6, 14, Math.PI).rotateZ(-sx * Math.PI / 2).translate(sx * 0.062, 0.18, 0), metal, true])];
     }
     case 'star': return [...base, [new THREE.CylinderGeometry(0.008, 0.012, 0.09, 8).translate(0, 0.095, 0), metal, true], [new THREE.ExtrudeGeometry(starShape, { depth: 0.014, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.004, bevelSegments: 1 }).translate(0, 0.19, -0.007), metal, true]];
     case 'book': return [...base, [new THREE.CylinderGeometry(0.012, 0.016, 0.05, 8).translate(0, 0.075, 0), metal, true],
-      ...[-1, 1].map((sx) => [new THREE.BoxGeometry(0.075, 0.008, 0.1).rotateZ(sx * 0.32).translate(sx * 0.036, 0.112, 0), metal, true]), [new THREE.BoxGeometry(0.012, 0.012, 0.1).translate(0, 0.104, 0), metal, true]];
+    ...[-1, 1].map((sx) => [new THREE.BoxGeometry(0.075, 0.008, 0.1).rotateZ(sx * 0.32).translate(sx * 0.036, 0.112, 0), metal, true]), [new THREE.BoxGeometry(0.012, 0.012, 0.1).translate(0, 0.104, 0), metal, true]];
     case 'rocket': return [...base, [new THREE.CylinderGeometry(0.022, 0.026, 0.11, 14).translate(0, 0.11, 0), metal, true], [new THREE.ConeGeometry(0.022, 0.05, 14).translate(0, 0.19, 0), metal, true],
-      ...[0, 1, 2].map((k) => [new THREE.BoxGeometry(0.006, 0.045, 0.03).translate(0, 0.075, 0.03).rotateY((k * Math.PI * 2) / 3), metal, true]), [new THREE.SphereGeometry(0.009, 10, 8).translate(0, 0.125, 0.024), '#7EC8E3', false]];
+    ...[0, 1, 2].map((k) => [new THREE.BoxGeometry(0.006, 0.045, 0.03).translate(0, 0.075, 0.03).rotateY((k * Math.PI * 2) / 3), metal, true]), [new THREE.SphereGeometry(0.009, 10, 8).translate(0, 0.125, 0.024), '#7EC8E3', false]];
     case 'medal': return [...base, ...[-1, 1].map((sx) => [new THREE.CylinderGeometry(0.005, 0.005, 0.17, 6).translate(sx * 0.045, 0.135, -0.02), '#2B2118', false]), [new THREE.BoxGeometry(0.1, 0.008, 0.008).translate(0, 0.22, -0.02), '#2B2118', false],
-      [new THREE.BoxGeometry(0.018, 0.07, 0.004).rotateZ(0.35).translate(-0.012, 0.18, -0.014), '#C8553D', false], [new THREE.BoxGeometry(0.018, 0.07, 0.004).rotateZ(-0.35).translate(0.012, 0.18, -0.012), '#3F7CC4', false],
-      [new THREE.CylinderGeometry(0.036, 0.036, 0.008, 22).rotateX(Math.PI / 2).translate(0, 0.125, -0.008), metal, true]];
+    [new THREE.BoxGeometry(0.018, 0.07, 0.004).rotateZ(0.35).translate(-0.012, 0.18, -0.014), '#C8553D', false], [new THREE.BoxGeometry(0.018, 0.07, 0.004).rotateZ(-0.35).translate(0.012, 0.18, -0.012), '#3F7CC4', false],
+    [new THREE.CylinderGeometry(0.036, 0.036, 0.008, 22).rotateX(Math.PI / 2).translate(0, 0.125, -0.008), metal, true]];
   }
   return base;
 }
@@ -63,7 +63,7 @@ function buildPlaque(since) {
     g.fillStyle = '#4A3410'; g.textAlign = 'center';
     g.font = '700 30px "Be Vietnam Pro", system-ui, sans-serif'; g.fillText(tr('life.trophy.plaque'), w / 2, 92);
     g.font = '800 64px "Be Vietnam Pro", system-ui, sans-serif'; g.fillText(date, w / 2, 178);
-    g.font = '600 26px "Be Vietnam Pro", system-ui, sans-serif'; g.fillText('My Office', w / 2, 236);
+    g.font = '600 26px "Be Vietnam Pro", system-ui, sans-serif'; g.fillText('CTS Office', w / 2, 236);
   });
   plaqueMesh = new THREE.Group(); plaqueMesh.position.set(-7.95, 1.62, -4.1); plaqueMesh.rotation.y = Math.PI / 2; scene.add(plaqueMesh);
   put(plaqueMesh, rbox(0.62, 0.42, 0.035, mat('#5A3B26', { roughness: 0.45 }), 0.012), 0, 0, 0.018);
@@ -97,8 +97,8 @@ export function setTrophies(t, fresh = []) {
 
 export function setup() {
   trophyMetalM = mat('#FFFFFF', { metalness: 0.82, roughness: 0.26, vertexColors: true }); trophyBaseM = mat('#FFFFFF', { roughness: 0.5, vertexColors: true });
-   trophyG.userData.noMerge = true;
-   if (PRO) scene.add(trophyG);
+  trophyG.userData.noMerge = true;
+  if (PRO) scene.add(trophyG);
   starShape = (() => { const sh = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2, r = i % 2 ? 0.024 : 0.058; const x = Math.sin(a) * r, y = Math.cos(a) * r; i ? sh.lineTo(x, y) : sh.moveTo(x, y); } sh.closePath(); return sh; })();
   if (PRO) {
     const g = new THREE.Group(); g.position.set(CAB.x, 0, CAB.z); g.rotation.y = CAB.ry; scene.add(g); PRO_FX.trophyCab = g;

@@ -67,7 +67,7 @@ export default {
     called: 'Có việc rồi, hát tiếp sau nha!',
     chatGo: ['Vào hát karaoke chút nha mọi người 🎤', 'Ai vào hát với em không? 🎤🎶', 'Phòng karaoke trống nè, em vào hát một bài'],
     chatScore: 'Vừa hát “{song}” được {n} điểm 🎤 Ai hát hơn không?',
-    credit: 'Lời và nhạc: My Office',
+    credit: 'Lời và nhạc: CTS Office',
     points: 'ĐIỂM CỦA BẠN',
     verdict: { top: 'Tuyệt vời! Ca sĩ đây rồi 🎤', good: 'Hay quá! Hát thêm bài nữa đi', ok: 'Cũng được, luyện thêm nhé 😄' },
   },
@@ -108,8 +108,10 @@ export default {
     homeShop: 'Ghé {shop} mua đồ rồi về',
     how: { bike: 'xe máy', grab: 'GrabBike', xsm: 'Xanh SM Bike', taxi: 'taxi Xanh SM' },
     // at the till: what they are getting there
-    buy: { cup: 'Đang ở {shop} mua nước', noodle: 'Đang ở {shop} mua mì ly', tok: 'Đang ở {shop} ăn tokbokki', onigiri: 'Đang ở {shop} lấy onigiri',
-      bun: 'Đang ở {shop} mua bánh bao', cone: 'Đang ở {shop} mua kem', chicken: 'Đang ở {shop} mua gà rán', grocery: 'Đang ở {shop} mua đồ' },
+    buy: {
+      cup: 'Đang ở {shop} mua nước', noodle: 'Đang ở {shop} mua mì ly', tok: 'Đang ở {shop} ăn tokbokki', onigiri: 'Đang ở {shop} lấy onigiri',
+      bun: 'Đang ở {shop} mua bánh bao', cone: 'Đang ở {shop} mua kem', chicken: 'Đang ở {shop} mua gà rán', grocery: 'Đang ở {shop} mua đồ'
+    },
   },
   // going out (outings.js): the GrabFood rider with the team's lunch, a trip to the convenience store across the street
   out: {

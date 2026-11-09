@@ -243,7 +243,7 @@ export function renderHud() {
   }));
   $('bell-dot').hidden = !waiting;
   const yours = waiting + unseenDone.size;
-  document.title = yours ? tr('activity.docTitle', { n: yours }) : 'My Office';
+  document.title = yours ? tr('activity.docTitle', { n: yours }) : 'CTS Office';
 }
 export function updateMarkers(t) {
   const sel = state.selectedId ? workers.get(state.selectedId) : null;

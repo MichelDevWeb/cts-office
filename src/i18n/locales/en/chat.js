@@ -1,7 +1,7 @@
 // The company's group chat (ui/group-chat.js): the window, and what people write in it. An array is several ways to
 // say the same thing, one picked at random.
 export default {
-  group: 'My Office team',
+  group: 'CTS Office team',
   open: 'Team chat',
   openTitle: 'The company group chat: people post about what they are doing (on this computer only, never sent to Claude)',
   members: '{n} members',
@@ -15,7 +15,7 @@ export default {
   yesterday: 'Yesterday',
   claudeTag: 'Claude',
   notifyBar: '🔔 Turn on notifications to know as soon as Claude answers, even with the phone locked.',
-  notifyBarInstall: '🔔 Want to know when Claude answers? Add My Office to your home screen first.',
+  notifyBarInstall: '🔔 Want to know when Claude answers? Add CTS Office to your home screen first.',
   notifyBarBtn: 'Turn on',
   conv: { open: 'See the whole conversation', back: 'Back to the group', gone: 'This conversation isn’t open on the Mac any more.', summary: '📄 A summary of what came before (tap to read)' },
   quick: {
@@ -82,8 +82,10 @@ export default {
     agWaiting: '⏳ Antigravity: {from} ran out. It moves to {to} while you are away for a bit, or when you close {app}.',
     agAway: '🔁 While you were away, {app} moved to {to} ({from} was running out). Its windows, tabs and Claude conversations are as they were.',
   },
-  card: { stopped: 'Stopped', allow: 'Allow', deny: 'Deny', stop: '⏹ Stop', askHere: '⏳ {what}', risky: 'A risky command: it can only be allowed on the Mac.', work: 'Working', wait: 'Waiting for your approval', done: 'Done', fail: 'Hit an error', meta: { one: '{n} step · {took}', other: '{n} steps · {took}' }, ask: '⏳ {what} · the approval card is below (45 s)', all: 'See all {n} steps', show: 'See the {n} steps', none: 'No steps needed',
-    attach: 'Back on the Mac, type {cmd} to carry on', waitMac: { perm: 'Waiting for your approval on the Mac itself', input: 'Waiting for your answer on the Mac itself', other: 'Waiting for you on the Mac' } },
+  card: {
+    stopped: 'Stopped', allow: 'Allow', deny: 'Deny', stop: '⏹ Stop', askHere: '⏳ {what}', risky: 'A risky command: it can only be allowed on the Mac.', work: 'Working', wait: 'Waiting for your approval', done: 'Done', fail: 'Hit an error', meta: { one: '{n} step · {took}', other: '{n} steps · {took}' }, ask: '⏳ {what} · the approval card is below (45 s)', all: 'See all {n} steps', show: 'See the {n} steps', none: 'No steps needed',
+    attach: 'Back on the Mac, type {cmd} to carry on', waitMac: { perm: 'Waiting for your approval on the Mac itself', input: 'Waiting for your answer on the Mac itself', other: 'Waiting for you on the Mac' }
+  },
   steer: {
     btn: '💬 Cut in',
     bar: 'A note for {name} while it works',
@@ -156,7 +158,7 @@ export default {
     subNew: '📁 {folder} · a new conversation, Claude for real',
     subMine: '📁 {folder} · carrying on your new conversation',
     nudgeOn: '🔔 Want your phone to tell you when Claude answers? Turn notifications on in ⚙ → More → 📱.',
-    nudgeInstall: '🔔 Want to know when Claude answers? Add My Office to your home screen (Share → Add to Home Screen), then turn notifications on in ⚙ → More → 📱.',
+    nudgeInstall: '🔔 Want to know when Claude answers? Add CTS Office to your home screen (Share → Add to Home Screen), then turn notifications on in ⚙ → More → 📱.',
     label: 'To',
     group: 'The whole group',
     groupSub: 'Chatting in the group, not sent to Claude',

@@ -75,7 +75,7 @@ export default {
     sign: 'UNDER MAINTENANCE',
     sorry: 'Sorry for the inconvenience',
     stickerHead: 'INSPECTED',
-    stickerWhat: 'My Office v{version}',
+    stickerWhat: 'CTS Office v{version}',
     stickerDate: 'Date {date}',
     stickerNo: 'No. {no}',
     tech: 'Lift technician',

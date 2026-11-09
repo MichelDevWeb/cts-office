@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Claude Code statusLine → My Office. Claude Code runs this on every status refresh with JSON on stdin (fields
+// Claude Code statusLine → CTS Office. Claude Code runs this on every status refresh with JSON on stdin (fields
 // documented at code.claude.com/docs/en/statusline). We forward the plan's 5-hour / 7-day usage, the exact context
 // window, the session cost and its prompt cache's clock to the office, then print a status line. If you had a status line before installing,
 // that command still runs with the same input and its output is what you see. Idea from W17ant/Claude-Office (MIT).
@@ -24,7 +24,7 @@ try { d = JSON.parse(raw) || {}; } catch { /* print the default line anyway */ }
 const pc = d.prompt_cache && typeof d.prompt_cache === 'object' ? d.prompt_cache : null;
 const cache = pc && { warm: pc.warm, caching_observed: pc.caching_observed, ttl: pc.ttl, expires_at: pc.expires_at, recache_tokens_if_cold: pc.recache_tokens_if_cold };
 const body = JSON.stringify({ session_id: d.session_id, rate_limits: d.rate_limits, context_window: d.context_window, cost: d.cost, prompt_cache: cache || undefined });
-const forward = fetch(`http://127.0.0.1:${PORT}/hook/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(400) }).catch(() => {});
+const forward = fetch(`http://127.0.0.1:${PORT}/hook/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(400) }).catch(() => { });
 
 let prev = null;
 try { prev = JSON.parse(fs.readFileSync(path.join(dataDir(ROOT, {}), 'statusline-prev.json'), 'utf8')); } catch { /* none */ }

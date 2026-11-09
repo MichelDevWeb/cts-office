@@ -110,9 +110,9 @@ export default {
   },
   // a session going round in circles (server/loops.mjs): what Claude reads, and the notification's title
   loop: {
-    deny: 'My Office blocked this call: it has already run {n} times and failed with the same error each time, so running it again unchanged will fail the same way. Try a different approach, or stop and ask the user.',
-    stopReason: 'Stopped from My Office by the user.',
-    hintFor: 'A hint from the user, sent from My Office: {hint}',
+    deny: 'CTS Office blocked this call: it has already run {n} times and failed with the same error each time, so running it again unchanged will fail the same way. Try a different approach, or stop and ask the user.',
+    stopReason: 'Stopped from CTS Office by the user.',
+    hintFor: 'A hint from the user, sent from CTS Office: {hint}',
     pushTitle: '⛔ {name} looks stuck',
     resting: '{name} is already resting: nothing to stop.',
     gone: 'This session has closed.',
@@ -127,15 +127,15 @@ export default {
   },
   // two sessions on one file, a port another process holds (server/overlap.mjs): said to Claude with its next call
   overlap: {
-    file: "[My Office] Another session on this computer, “{name}”, edited this file at {time}. Read the file again right before editing it and don't overwrite that session's changes; if the two pieces of work clash, stop and ask the user.",
-    port: "[My Office] Port {port} is held by {holder}. It may be another session's or the user's: don't stop or kill that process yourself; use another port, or ask the user.",
+    file: "[CTS Office] Another session on this computer, “{name}”, edited this file at {time}. Read the file again right before editing it and don't overwrite that session's changes; if the two pieces of work clash, stop and ask the user.",
+    port: "[CTS Office] Port {port} is held by {holder}. It may be another session's or the user's: don't stop or kill that process yourself; use another port, or ask the user.",
     holder: '{label} (running {up})',
     holderOf: '{label} from {owner} (running {up})',
     someone: 'another process',
   },
   // "Ghi nhớ cho Claude": what you pinned, said again after a compaction
   pins: {
-    context: '[My Office] This conversation was just compacted. The user pinned the following for it; keep following them:',
+    context: '[CTS Office] This conversation was just compacted. The user pinned the following for it; keep following them:',
     noSid: "This conversation's id isn't known yet: send it a message first.",
     full: 'Already {n} pinned notes: remove one first.',
   },
@@ -143,7 +143,7 @@ export default {
   undo: {
     busy: '{name} is working: wait until it is done to undo.',
     nothing: 'Nothing left to undo.',
-    tell: "[My Office] The user just undid the previous turn's file changes; these files are back as they were before it: {files}. Read them again before going on, and don't redo those changes unless asked.",
+    tell: "[CTS Office] The user just undid the previous turn's file changes; these files are back as they were before it: {files}. Read them again before going on, and don't redo those changes unless asked.",
   },
   deny: { over: 'This call is no longer waiting: Claude has moved on.' },
   // the prompt cache's clock: a session waiting for you is about to go cold (off unless turned on)
@@ -151,14 +151,14 @@ export default {
     nudgeTitle: { one: '☕ {name} goes cold in {n} minute', other: '☕ {name} goes cold in {n} minutes' },
     nudgeBody: 'It is waiting for your answer. Reply now and it carries on cheaply; once cold, the next message re-reads ~{tokens}k tokens.',
   },
-  steer: { note: '[The user, cutting in through My Office (from their phone) while you work]\n{text}' },
+  steer: { note: '[The user, cutting in through CTS Office (from their phone) while you work]\n{text}' },
   push: {
     permTitle: '⚠️ {name} needs your approval (within 45 s)',
-    testTitle: '🔔 My Office',
+    testTitle: '🔔 CTS Office',
     testBody: 'Notifications work: your phone tells you when Claude answers or needs approving.',
   },
   pin: {
-    title: 'Enter My Office',
+    title: 'Enter CTS Office',
     help: 'Type the PIN. It is on the {mac}: click 📱 in the office.',
     label: 'PIN',
     submit: 'Enter the office',
@@ -171,7 +171,7 @@ export default {
   },
   // replies that go back to Claude through its hooks
   perm: {
-    denied: 'The user denied this in My Office.',
+    denied: 'The user denied this in CTS Office.',
     planRevise: 'The user has not approved the plan and wants it revised.',
     planReviseWhy: 'The user has not approved the plan and wants it revised: {why}',
   },
@@ -266,7 +266,7 @@ export default {
     },
     result: {
       notOffered: "This process isn't on the list of things that may be stopped.",
-      protected: "Can't stop the process running My Office.",
+      protected: "Can't stop the process running CTS Office.",
       gone: 'This process already stopped on its own.',
       restarted: 'This process restarted, or its PID now belongs to another process. Click "{refresh}" and try again.',
       stubborn: 'The process hasn\'t stopped yet. Click "{force}" to stop it now.',

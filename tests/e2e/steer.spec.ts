@@ -21,8 +21,10 @@ test.beforeAll(async () => {
   fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(path.join(HOME, '.claude', 'sessions'), { recursive: true }); fs.mkdirSync(PROJ, { recursive: true });
   inbox = net.createServer((c) => { let b = ''; c.on('data', (d) => { b += d; }); c.on('end', () => got.push(b)); });
   await new Promise<void>((r) => inbox!.listen(INBOX, r));
-  const env: NodeJS.ProcessEnv = { ...process.env, HOME, USERPROFILE: HOME, OFFICE_CLAUDE_BIN: path.resolve('tests/e2e/fake-claude.sh'), NODE_ENV: 'production', OFFICE_PORT: String(PORT),
-    OFFICE_DATA_DIR: path.join(OUT, 'office-data'), OFFICE_LANG: 'en', OFFICE_TRANSLATE: '0', OFFICE_USAGE: '0', OFFICE_CI: '0', FAKE_INBOX: INBOX };
+  const env: NodeJS.ProcessEnv = {
+    ...process.env, HOME, USERPROFILE: HOME, OFFICE_CLAUDE_BIN: path.resolve('tests/e2e/fake-claude.sh'), NODE_ENV: 'production', OFFICE_PORT: String(PORT),
+    OFFICE_DATA_DIR: path.join(OUT, 'office-data'), OFFICE_LANG: 'en', OFFICE_TRANSLATE: '0', OFFICE_USAGE: '0', OFFICE_CI: '0', FAKE_INBOX: INBOX
+  };
   delete env.CLAUDE_CONFIG_DIR;   // (never the real ~/.claude)
   server = spawn(process.execPath, ['server/index.mjs'], { env, stdio: 'ignore' });
   await expect.poll(async () => { try { return (await fetch(`${BASE}/health`)).ok; } catch { return false; } }, { timeout: 60_000 }).toBe(true);
@@ -36,8 +38,10 @@ const notes = () => got.map((x) => JSON.parse(x).message.content as string);
 // without), and the hooks that say it is working
 async function busySession(request: import('@playwright/test').APIRequestContext, sid: string, name: string, withInbox: boolean, mode = 'default') {
   const p = spawn('sleep', ['600'], { stdio: 'ignore' }); procs.push(p);
-  fs.writeFileSync(path.join(HOME, '.claude', 'sessions', `${p.pid}.json`), JSON.stringify({ pid: p.pid, sessionId: sid, cwd: PROJ, startedAt: Date.now(), kind: 'interactive', entrypoint: 'cli', name, status: 'busy', updatedAt: Date.now(),
-    ...(withInbox ? { peerProtocol: 1, messagingSocketPath: INBOX } : {}) }));
+  fs.writeFileSync(path.join(HOME, '.claude', 'sessions', `${p.pid}.json`), JSON.stringify({
+    pid: p.pid, sessionId: sid, cwd: PROJ, startedAt: Date.now(), kind: 'interactive', entrypoint: 'cli', name, status: 'busy', updatedAt: Date.now(),
+    ...(withInbox ? { peerProtocol: 1, messagingSocketPath: INBOX } : {})
+  }));
   const base = { session_id: sid, cwd: PROJ, permission_mode: mode };
   await request.post(`${BASE}/event`, { data: { ...base, hook_event_name: 'UserPromptSubmit', prompt: 'refactor the parser' } });
   await request.post(`${BASE}/event`, { data: { ...base, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: '/e2e/parser.ts' } } });
@@ -70,7 +74,7 @@ test('cutting in on a conversation at work: from "To", from a run\'s card, and k
   await expect(ask).toContainText('e2e-busy is in the middle of something', { timeout: 20_000 });
   await ask.locator('.zc-ask-yes').click();
   await expect.poll(notes, { timeout: 20_000 }).toContainEqual(expect.stringContaining('fix the tests too'));
-  expect(notes()[0]).toMatch(/^\[The user, cutting in through My Office/);
+  expect(notes()[0]).toMatch(/^\[The user, cutting in through CTS Office/);
   await expect(zc.locator('.zc-sys', { hasText: 'Your note is in: e2e-busy' })).toBeVisible({ timeout: 20_000 });
   // "Later": nothing sent, the words back in the input
   await writeTo(page, 'e2e-steer-1', 'and the docs');

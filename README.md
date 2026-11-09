@@ -47,14 +47,14 @@ node bin/cli.mjs install --service   # adds hooks to ~/.claude/settings.json and
 node bin/cli.mjs doctor              # checks Node, the server, Antigravity/Claude sessions, and background service
 ```
 
-- `install` backs up `settings.json` before changing it and only adds My Office's own hooks. Running it again adds
+- `install` backs up `settings.json` before changing it and only adds CTS Office's own hooks. Running it again adds
   nothing twice.
 - To remove everything: `my-office uninstall` (from the source: `node bin/cli.mjs uninstall`).
 
 | Command | What it does |
 | --- | --- |
 | `install [--service] [--lan] [--no-approve] [--no-status] [--no-otel] [--no-otel-names]` | Adds three kinds of hooks: event hooks, approval hooks, and a status line that reports your plan's usage. Your own status line keeps running inside it. It also turns on Claude Code's own usage numbers (OpenTelemetry) for "What eats your plan", unless you already send them somewhere: see below. `--service` runs the office in the background from login: launchd on macOS, a systemd user service on Linux, the Startup folder on Windows (no admin needed). `--lan` lets a phone on the same Wi-Fi watch. `--no-approve` leaves out the approval hooks. `--no-status` leaves your status line alone. `--no-otel` leaves telemetry off; `--no-otel-names` keeps the names of your own MCP servers, skills and agents hidden ("custom"). |
-| `uninstall` | Removes every My Office hook, the telemetry settings install added, and the background service, and keeps the rest of `settings.json`. |
+| `uninstall` | Removes every CTS Office hook, the telemetry settings install added, and the background service, and keeps the rest of `settings.json`. |
 | `doctor` | Checks each step and says what is missing and how to fix it. |
 | `start [--lan]` | Runs the server in this terminal (no launchd). |
 | `pin [--new]` | Shows the phone PIN; `--new` changes it and signs every phone out. |
@@ -404,13 +404,13 @@ node bin/cli.mjs doctor              # checks Node, the server, Antigravity/Clau
   (`CLAUDE_CODE_SUBAGENT_MODEL_FORCE`). "Ask Claude to split big tasks among subagents" adds a short note to
   `~/.claude/CLAUDE.md`, taken out again when off. Written to `~/.claude/settings.json` (`model`,
   `env.CLAUDE_CODE_SUBAGENT_MODEL`); the other accounts share it by a link. Sessions started from then on use it.
-- **My Office in the Mac's menu bar**: `install` also builds a small menu bar app (the building icon by the clock; it
+- **CTS Office in the Mac's menu bar**: `install` also builds a small menu bar app (the building icon by the clock; it
   needs Xcode's command line tools): the number of sessions waiting for you, or at work, coloured when a plan's limit
   runs low; a click (or ⌃⌥O from any app) opens the same small panel as the editor's, a right-click opens the office;
   a notification when a session starts waiting for you or finishes. In the panel: ↑ ↓ pick a session, Enter brings
   its window up, Y / N answer the first request to approve, Esc closes it. The office starts it with itself.
   `--no-menubar` leaves it out.
-- **My Office in the editor's side bar**: `install` also adds a small panel to each editor on the computer (Antigravity,
+- **CTS Office in the editor's side bar**: `install` also adds a small panel to each editor on the computer (Antigravity,
   VS Code, Cursor, Windsurf…: its icon in the activity bar): who is working, who waits for you with "Allow / Deny" right
   there, each tool's limit left; click a session to bring its window forward. It is the office's light page `/panel`
   (no 3D), so it costs next to nothing; `--no-panel` leaves the editors alone, `uninstall` takes it out.
@@ -491,7 +491,7 @@ node bin/cli.mjs doctor              # checks Node, the server, Antigravity/Clau
   text only, 20 an hour; it uses a little of your plan), with Undo. Off in Settings → More → Group chat.
 - **Notifications on your phone** (Web Push, from `server/push.mjs` with nothing but `node:crypto`; shown by
   `public/sw.js`): Claude's answers, and an approval a phone's work needs while no office page is open, even with the
-  phone locked. Turned on on each phone (⚙ → More → 📱) over the https address; on an iPhone, add My Office to the home
+  phone locked. Turned on on each phone (⚙ → More → 📱) over the https address; on an iPhone, add CTS Office to the home
   screen first (Share → Add to Home Screen: it becomes an app, full screen, with its icon). The Mac's phone window counts
   the phones and sends a test. Subscriptions are posted only to the browsers' own push services.
 - **History vault**: Claude Code deletes a conversation's transcript after 30 days (`cleanupPeriodDays`). The office

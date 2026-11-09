@@ -74,7 +74,7 @@ export default {
     called: 'Work’s in, I’ll finish the song later!',
     chatGo: ['Off to sing some karaoke, everyone 🎤', 'Anyone want to sing with me? 🎤🎶', 'The karaoke box is free, I’m going in for a song'],
     chatScore: 'Just sang “{song}” and got {n} points 🎤 Anyone beat that?',
-    credit: 'Words and music: My Office',
+    credit: 'Words and music: CTS Office',
     points: 'YOUR SCORE',
     verdict: { top: 'Amazing! A star is born 🎤', good: 'Lovely! Sing another one', ok: 'Not bad, keep practising 😄' },
   },
@@ -118,8 +118,10 @@ export default {
     homeShop: 'Shopping at {shop} on the way home',
     how: { bike: 'scooter', grab: 'GrabBike', xsm: 'Xanh SM Bike', taxi: 'Xanh SM taxi' },
     // at the till: what they are getting there
-    buy: { cup: 'At {shop}, getting a drink', noodle: 'At {shop}, getting cup noodles', tok: 'At {shop}, having tteokbokki', onigiri: 'At {shop}, getting onigiri',
-      bun: 'At {shop}, getting a steamed bun', cone: 'At {shop}, getting ice cream', chicken: 'At {shop}, getting fried chicken', grocery: 'At {shop}, shopping' },
+    buy: {
+      cup: 'At {shop}, getting a drink', noodle: 'At {shop}, getting cup noodles', tok: 'At {shop}, having tteokbokki', onigiri: 'At {shop}, getting onigiri',
+      bun: 'At {shop}, getting a steamed bun', cone: 'At {shop}, getting ice cream', chicken: 'At {shop}, getting fried chicken', grocery: 'At {shop}, shopping'
+    },
   },
   // going out (outings.js): the GrabFood rider with the team's lunch, a trip to the convenience store across the street
   out: {

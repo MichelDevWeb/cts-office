@@ -78,8 +78,10 @@ const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStar
 function base(kind, o) {
   const names = [0, 1].map((i) => short(o.names?.[i], 12) || `${i + 1}P`);
   const colors = [0, 1].map((i) => o.colors?.[i] || ['#E8742A', '#3F7CC4'][i]);
-  const G = { kind, title: TITLES[kind], names, colors, rand: dice(o.seed), over: false, winner: -1, score: [0, 0], time: 0, events: [],
-    shake: 0, flash: 0, t: 0, pad: [{}, {}], lead: () => 0 };
+  const G = {
+    kind, title: TITLES[kind], names, colors, rand: dice(o.seed), over: false, winner: -1, score: [0, 0], time: 0, events: [],
+    shake: 0, flash: 0, t: 0, pad: [{}, {}], lead: () => 0
+  };
   G.emit = (type, who) => G.events.push({ type, who });
   // a button counts once per press: held down, it doesn't repeat
   G.press = (i, c, k) => { const was = G.pad[i][k], now = !!c?.[k]; G.pad[i][k] = now; return now && !was; };
@@ -348,7 +350,7 @@ function football(o) {
       box(g, '#FFFFFF', s ? P1 : P0 - 1, MID - GOAL / 2 - 1, 2, 2); box(g, '#FFFFFF', s ? P1 : P0 - 1, MID + GOAL / 2, 2, 2);
     }
     box(g, '#10161E', 0, 208, TV_W, 8);   // the LED boards
-    const ad = 'MY OFFICE  +  PHO 24  +  CLAUDE CODE  +  BANH MI  +  ', aw = ad.length * 4, off = Math.floor(G.t * 18) % aw;
+    const ad = 'CTS Office  +  PHO 24  +  CLAUDE CODE  +  BANH MI  +  ', aw = ad.length * 4, off = Math.floor(G.t * 18) % aw;
     for (let x = -off; x < TV_W; x += aw) text(g, ad, x, 210, '#F2A65A', 1, 'l', null);
     for (const it of [...men, ball].sort((a, b) => a.y - b.y)) if (it === ball) drawBall(g); else drawMan(g, it);
     box(g, '#0B0E14', 0, 0, TV_W, 13);   // the scoreboard and the clock
@@ -372,8 +374,8 @@ const AHEAD = CAMH * DEPTH;   // how far in front of the camera the player's own
 const easeIn = (a, b, p) => a + (b - a) * p * p, easeIO = (a, b, p) => a + (b - a) * (0.5 - Math.cos(p * Math.PI) / 2);
 // the course: [ease in, hold, ease out, bend (minus: left), hill (plus: up)]
 const PLAN = [[20, 40, 20, 0, 0], [30, 60, 30, -3, 20], [20, 40, 20, 0, -15], [25, 40, 25, 4, 0], [20, 30, 20, -2, 30], [30, 50, 30, 0, -25],
-  [40, 60, 40, 3, 10], [15, 30, 15, -4, 0], [30, 70, 30, 0, -10], [25, 50, 25, -3, -5], [20, 40, 20, 2, 20], [25, 40, 25, 0, -20]];
-const SIGNS = { pho: ['#C8322B', '#FFD447', 'PHO'], office: ['#1C2620', '#E8865F', 'MY OFFICE'], banhmi: ['#F2C14E', '#7A3B12', 'BANH MI'], claude: ['#D97757', '#FFF4EC', 'CLAUDE'] };
+[40, 60, 40, 3, 10], [15, 30, 15, -4, 0], [30, 70, 30, 0, -10], [25, 50, 25, -3, -5], [20, 40, 20, 2, 20], [25, 40, 25, 0, -20]];
+const SIGNS = { pho: ['#C8322B', '#FFD447', 'PHO'], office: ['#1C2620', '#E8865F', 'CTS Office'], banhmi: ['#F2C14E', '#7A3B12', 'BANH MI'], claude: ['#D97757', '#FFF4EC', 'CLAUDE'] };
 const ORD = ['1ST', '2ND', '3RD', '4TH'];
 function course(R) {
   const segs = [], lastY = () => (segs.length ? segs[segs.length - 1].y2 : 0);
@@ -471,11 +473,15 @@ function racing(o) {
   const G = base('racing', o), R = G.rand, segs = course(R), N = segs.length, LEN = N * SEG;
   const wrap = (d) => ((d % LEN) + LEN) % LEN, segAt = (d) => segs[Math.floor(wrap(d) / SEG) % N];
   // two players on the second row, two computer cars ahead of them on the first
-  const cars = [0, 1, 2, 3].map((i) => ({ i, name: i < 2 ? G.names[i] : `CPU ${i - 1}`, col: i < 2 ? G.colors[i] : ['#4FB477', '#B06BD6'][i - 2],
+  const cars = [0, 1, 2, 3].map((i) => ({
+    i, name: i < 2 ? G.names[i] : `CPU ${i - 1}`, col: i < 2 ? G.colors[i] : ['#4FB477', '#B06BD6'][i - 2],
     d: i < 2 ? -SEG * 5 : -SEG * 1.5, x: i % 2 ? 0.45 : -0.45, speed: 0, nitro: 1, lap: -1, done: 0, spin: 0, cd: 0, shake: 0,
-    pos: i < 2 ? 3 + i : i - 1, top: i < 2 ? 1 : [0.92, 0.95][i - 2], sky: 0, steer: 0, boost: false, nos: false, passAt: 0 }));
-  const bikes = Array.from({ length: 14 }, (_, k) => ({ d: (k + 0.4 + R() * 0.3) * LEN / 14, x: [-0.62, 0.05, 0.6][k % 3] + (R() - 0.5) * 0.15,
-    speed: VMAX * (0.26 + R() * 0.1), kind: ['grab', 'nonla', 'box', 'be'][k % 4] }));
+    pos: i < 2 ? 3 + i : i - 1, top: i < 2 ? 1 : [0.92, 0.95][i - 2], sky: 0, steer: 0, boost: false, nos: false, passAt: 0
+  }));
+  const bikes = Array.from({ length: 14 }, (_, k) => ({
+    d: (k + 0.4 + R() * 0.3) * LEN / 14, x: [-0.62, 0.05, 0.6][k % 3] + (R() - 0.5) * 0.15,
+    speed: VMAX * (0.26 + R() * 0.1), kind: ['grab', 'nonla', 'box', 'be'][k % 4]
+  }));
   let phase = 'count', phaseT = 3.4, closeSaid = false, podium = [];
   function crash(c, keep, spin) {
     if (c.cd > 0) return;
@@ -654,8 +660,10 @@ function racing(o) {
 /* ---------- fighting: a rooftop at sunset, best of three rounds ---------- */
 const AW = 520, FLOOR = 184, ROUND_T = 40;
 // wind-up, the hit, recovery (s); how far it reaches, how hard, how long it stuns, how far it pushes
-const MOVES = { punch: { a: 0.06, b: 0.07, c: 0.14, reach: 30, dmg: 4, stun: 0.22, push: 70 }, kick: { a: 0.1, b: 0.08, c: 0.22, reach: 40, dmg: 6, stun: 0.3, push: 120 },
-  special: { a: 0.22, b: 0.05, c: 0.33 } };
+const MOVES = {
+  punch: { a: 0.06, b: 0.07, c: 0.14, reach: 30, dmg: 4, stun: 0.22, push: 70 }, kick: { a: 0.1, b: 0.08, c: 0.22, reach: 40, dmg: 6, stun: 0.3, push: 120 },
+  special: { a: 0.22, b: 0.05, c: 0.33 }
+};
 function fighting(o) {
   const G = base('fighting', o), R = G.rand, col = G.colors;
   const make = (i) => ({ i, x: AW / 2 + (i ? 52 : -52), y: 0, vx: 0, vy: 0, face: i ? -1 : 1, hp: 100, ghost: 100, meter: 0.25, st: 'idle', t: 0, hit: false, stun: 0, wins: 0, low: false });
@@ -935,7 +943,7 @@ export function drawIdle(g, t, kind) {
   banner(g, TITLES[k], 40, '#FFFFFF', TITLES[k].length > 11 ? 4 : 5);
   if (Math.floor(t * 1.6) % 2 === 0) text(g, 'PRESS START', TV_W / 2, 84, '#F7D354', 2, 'c');
   if (home) {
-    box(g, 'rgba(0,0,0,.35)', 0, 0, TV_W, 12); text(g, 'MY OFFICE ARCADE', 5, 4, '#FFFFFF', 1, 'l', null);
+    box(g, 'rgba(0,0,0,.35)', 0, 0, TV_W, 12); text(g, 'CTS Office ARCADE', 5, 4, '#FFFFFF', 1, 'l', null);
     for (let i = 0; i < GAMES.length; i++) {
       const sel = GAMES[i] === k, x = 192 - 68 + i * 48, y = sel ? 196 : 198;
       box(g, sel ? '#FFFFFF' : 'rgba(0,0,0,.45)', x - 2, y - 2, 44, 18); box(g, ['#46A650', '#D2665E', '#6B4FA0'][i], x, y, 40, 14);

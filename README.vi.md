@@ -40,7 +40,7 @@ node bin/cli.mjs doctor              # kiểm tra Node, curl, server, phiên Ant
 | Lệnh | Việc |
 | --- | --- |
 | `install [--service] [--lan] [--no-approve] [--no-status] [--no-otel] [--no-otel-names]` | Thêm 13 hook báo sự kiện, hook duyệt quyền, hook trả lời câu hỏi / duyệt kế hoạch, và status line báo hạn mức gói (status line cũ của bạn vẫn chạy bên trong). Bật luôn số liệu dùng của chính Claude Code (OpenTelemetry) cho "Cái gì đang ăn gói", trừ khi bạn đã gửi nó đi chỗ khác. `--service`: chạy nền bằng launchd. `--lan`: cho điện thoại cùng wifi xem. `--no-approve`: bỏ hai hook duyệt. `--no-status`: không đụng status line. `--no-otel`: không bật số liệu dùng; `--no-otel-names`: giữ ẩn tên MCP, skill, agent bạn tự thêm ("custom") |
-| `uninstall` | Gỡ mọi hook của My Office, phần cài đặt số liệu dùng do install thêm, và dịch vụ nền; giữ nguyên phần còn lại của `settings.json` |
+| `uninstall` | Gỡ mọi hook của CTS Office, phần cài đặt số liệu dùng do install thêm, và dịch vụ nền; giữ nguyên phần còn lại của `settings.json` |
 | `doctor` | Kiểm tra từng bước, nói rõ thiếu gì và lệnh sửa |
 | `start [--lan]` | Chạy server ở cửa sổ hiện tại (không dùng launchd) |
 | `pin [--new]` | Xem mã PIN điện thoại; `--new` đổi mã và đăng xuất mọi điện thoại |

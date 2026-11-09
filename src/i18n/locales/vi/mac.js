@@ -103,7 +103,7 @@ export default {
     demo: 'Bản demo: không làm gì trên máy thật.',
     done: 'Xong.',
     failed: 'Không làm được.',
-    unreachable: 'Không gửi được yêu cầu tới My Office.',
+    unreachable: 'Không gửi được yêu cầu tới CTS Office.',
   },
   verb: {
     stop: 'Tắt',

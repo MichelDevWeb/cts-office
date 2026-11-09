@@ -1,4 +1,4 @@
-// My Office in the Mac's menu bar: an icon with the number of sessions waiting for you (or at work), coloured when a
+// CTS Office in the Mac's menu bar: an icon with the number of sessions waiting for you (or at work), coloured when a
 // plan's limit runs low; a click opens the office's small panel (/panel) in a popover, a right-click a short menu; a
 // notification when a session starts waiting for you or finishes. It reads the office's /api/panel every 3 seconds.
 // Built by `my-office install` (bin/cli.mjs: swiftc, then an app bundle in the office's data folder) and started by
@@ -25,7 +25,7 @@ final class Bar: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNUserNotif
   func applicationDidFinishLaunching(_ note: Notification) {
     item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     if let b = item.button {
-      b.image = NSImage(systemSymbolName: "building.2", accessibilityDescription: "My Office")
+      b.image = NSImage(systemSymbolName: "building.2", accessibilityDescription: "CTS Office")
       b.image?.isTemplate = true
       b.imagePosition = .imageLeading
       b.target = self
@@ -127,7 +127,7 @@ final class Bar: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNUserNotif
   }
   // the icon's number and colour, and a notification for what changed since the last reading
   func show(_ j: [String: Any]?) {
-    guard let j = j, let b = item.button else { item.button?.title = ""; item.button?.toolTip = words["off"] ?? "My Office isn't running"; return }
+    guard let j = j, let b = item.button else { item.button?.title = ""; item.button?.toolTip = words["off"] ?? "CTS Office isn't running"; return }
     if let w = j["words"] as? [String: String] {
       if w != words { words = w; UNUserNotificationCenter.current().setNotificationCategories(categories()) }
     }
@@ -167,7 +167,7 @@ final class Bar: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNUserNotif
     guard let id = r["id"] as? String else { return }
     let kind = r["kind"] as? String ?? "perm", risky = r["risky"] as? Bool ?? false
     let c = UNMutableNotificationContent()
-    c.title = r["name"] as? String ?? "My Office"
+    c.title = r["name"] as? String ?? "CTS Office"
     let detail = r["detail"] as? String ?? ""
     c.body = kind == "plan" && detail.isEmpty ? (words["plan"] ?? "A plan needs your approval") : detail
     c.sound = .default
@@ -177,7 +177,7 @@ final class Bar: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNUserNotif
   }
   func notify(id: String, text: String, category: String = "", info: [String: Any] = [:]) {
     let c = UNMutableNotificationContent()
-    c.title = "My Office"
+    c.title = "CTS Office"
     c.body = text
     c.sound = .default
     if !category.isEmpty { c.categoryIdentifier = category }

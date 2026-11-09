@@ -19,8 +19,10 @@ const ddmm = (day) => { const [, m, d] = String(day || '').split('-'); return d 
 const hrs = (x) => { const n = Math.round((Number(x) || 0) * 10) / 10; return { n, h: num(n, 1) }; };
 let lastData = null;
 
-const demoWeek = () => ({ from: '2026-10-21', to: '2026-10-27', days: 7, hoursSum: 63.4, hoursWall: 38.2, waitHours: 9.6, stats: { prompts: 312, edit: 1840, read: 4210, cmd: 2985, web: 140, deploy: 9 },
-  commits: 46, pushes: 21, longestMin: 214, cost: 412.5, sessions: 27, projects: [{ name: 'landing-page', hours: 21.3 }, { name: 'shop-api', hours: 17.8 }], busiest: { day: '2026-10-23', weekday: 4, hours: 14.2 } });
+const demoWeek = () => ({
+  from: '2026-10-21', to: '2026-10-27', days: 7, hoursSum: 63.4, hoursWall: 38.2, waitHours: 9.6, stats: { prompts: 312, edit: 1840, read: 4210, cmd: 2985, web: 140, deploy: 9 },
+  commits: 46, pushes: 21, longestMin: 214, cost: 412.5, sessions: 27, projects: [{ name: 'landing-page', hours: 21.3 }, { name: 'shop-api', hours: 17.8 }], busiest: { day: '2026-10-23', weekday: 4, hours: 14.2 }
+});
 
 // the office right now: draw a frame and copy it in the same task, before the browser clears the canvas
 function officeShot() {
@@ -36,7 +38,7 @@ function draw(d, shot) {
   for (const [x, y, r, col] of [[930, 120, 380, 'rgba(217, 119, 87, .22)'], [120, 980, 420, 'rgba(140, 79, 168, .22)']]) { const gl = g.createRadialGradient(x, y, 0, x, y, r); gl.addColorStop(0, col); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }
   // header: the mark, the name, the week
   g.save(); g.translate(60, 52); g.scale(2.6, 2.6); g.fillStyle = '#E8865F'; g.fill(new Path2D(OFFICE_MARK), 'evenodd'); g.restore();
-  g.fillStyle = '#F6EFE4'; g.font = `800 34px ${F}`; g.textBaseline = 'middle'; g.fillText('My Office', 136, 84);
+  g.fillStyle = '#F6EFE4'; g.font = `800 34px ${F}`; g.textBaseline = 'middle'; g.fillText('CTS Office', 136, 84);
   g.fillStyle = '#A9B1C4'; g.font = `600 28px ${F}`; g.textAlign = 'right'; g.fillText(d.from === d.to ? ddmm(d.to) : `${ddmm(d.from)} – ${ddmm(d.to)}`, W - 60, 84); g.textAlign = 'left';
   g.fillStyle = '#FFFFFF'; g.font = `800 64px ${F}`; g.fillText(tr('wrapped.title'), 60, 178);
   // the office picture, cropped to fill its frame
@@ -82,7 +84,7 @@ async function open() {
   lastData = d;
   // canvas text does not wait for web fonts: load the weights the card uses first (the sample text pulls in both the Latin
   // and the Vietnamese subsets)
-  await Promise.all(['800 40px', '600 30px', '500 26px'].map((f) => document.fonts.load(`${f} "Be Vietnam Pro"`, 'Tuần ờ'))).catch(() => {});
+  await Promise.all(['800 40px', '600 30px', '500 26px'].map((f) => document.fonts.load(`${f} "Be Vietnam Pro"`, 'Tuần ờ'))).catch(() => { });
   draw(d, shot);
   $('wrap-note').textContent = d.days < 7 ? tr('wrapped.partial', { n: d.days }) : tr('wrapped.full');
 }

@@ -62,7 +62,7 @@ export function codexProgram(args) {
  * @param {{ dir: string, seat: () => string, bin: () => (string | null), procs?: () => Promise<{ pid: number, start: number, args: string }[]>,
  *   openUrl?: (url: string) => void, now?: () => number, log?: (s: string) => void, onChange?: (what?: object) => void }} o
  */
-export function createCodexAccounts({ dir, seat, bin, procs = async () => [], openUrl = () => {}, now = Date.now, log = () => {}, onChange = () => {} }) {
+export function createCodexAccounts({ dir, seat, bin, procs = async () => [], openUrl = () => { }, now = Date.now, log = () => { }, onChange = () => { } }) {
   const FILE = path.join(dir, 'accounts.json');
   /** list: [{ id, key, email, name, plan, label, windows, reached, at, note, tried }]; order: ids; tenure: [{ id, from }] which
    *  account sat in the seat since when (a codex started at t uses the one there at t) */
@@ -105,7 +105,7 @@ export function createCodexAccounts({ dir, seat, bin, procs = async () => [], op
     seatNote = !text ? 'signedOut' : !who ? (auth?.OPENAI_API_KEY ? 'apiKey' : 'unknown') : '';
     let a = who && st.list.find((x) => x.key === who.key);
     if (who && !a) a = addAccount(who);
-    if (a) { Object.assign(a, { email: who.email || a.email, name: who.name || a.name, plan: who.plan || a.plan }); await keep(a.id, text).catch(() => {}); }
+    if (a) { Object.assign(a, { email: who.email || a.email, name: who.name || a.name, plan: who.plan || a.plan }); await keep(a.id, text).catch(() => { }); }
     const was = seatId; seatId = a?.id || null;
     if (seatId !== (st.tenure.at(-1)?.id ?? null)) { st.tenure.push({ id: seatId, from: st.tenure.length ? now() : 0 }); st.tenure = st.tenure.slice(-12); }
     save();
@@ -146,15 +146,15 @@ export function createCodexAccounts({ dir, seat, bin, procs = async () => [], op
       });
       child.on('error', () => done({ error: 'noCli', got }));
       child.on('exit', () => done({ error: got.length < calls.length ? 'exited' : null, got }));
-      child.stdin.on('error', () => {});
-      send({ id: 1, method: 'initialize', params: { clientInfo: { name: 'my-office', title: 'My Office', version: '1' }, capabilities: null } });
+      child.stdin.on('error', () => { });
+      send({ id: 1, method: 'initialize', params: { clientInfo: { name: 'my-office', title: 'CTS Office', version: '1' }, capabilities: null } });
     });
   }
 
   /** An account's usage, read by Codex itself: from the seat for the one in it, else from its own copy (never while a
    *  codex started on it is still running: that one may be refreshing the same tokens). */
   let queue = Promise.resolve();
-  function read(id) { queue = queue.then(() => readNow(id)).catch(() => {}); return queue; }
+  function read(id) { queue = queue.then(() => readNow(id)).catch(() => { }); return queue; }
   async function readNow(id) {
     const a = find(id); if (!a) return;
     a.tried = now();
@@ -223,7 +223,7 @@ export function createCodexAccounts({ dir, seat, bin, procs = async () => [], op
       Object.assign(L, { state, note }); clearTimeout(L.timer);
       try { child.kill(); } catch { /* gone */ }
       mine.delete(child.pid);
-      setTimeout(() => fsp.rm(tmp, { recursive: true, force: true }).catch(() => {}), 1500).unref?.();
+      setTimeout(() => fsp.rm(tmp, { recursive: true, force: true }).catch(() => { }), 1500).unref?.();
       onChange();
     };
     L.timer = setTimeout(() => end('failed', 'timeout'), 15 * 60e3); L.timer.unref?.();
@@ -246,8 +246,8 @@ export function createCodexAccounts({ dir, seat, bin, procs = async () => [], op
     });
     child.on('error', () => end('failed', 'noCli'));
     child.on('exit', () => end('failed', 'exited'));
-    child.stdin.on('error', () => {});
-    send({ id: 1, method: 'initialize', params: { clientInfo: { name: 'my-office', title: 'My Office', version: '1' }, capabilities: null } });
+    child.stdin.on('error', () => { });
+    send({ id: 1, method: 'initialize', params: { clientInfo: { name: 'my-office', title: 'CTS Office', version: '1' }, capabilities: null } });
     return loginOut();
   }
   async function saveLogin(tmp) {
@@ -265,7 +265,7 @@ export function createCodexAccounts({ dir, seat, bin, procs = async () => [], op
   function addCancel() {
     if (login?.state !== 'waiting') return;
     if (login.loginId) { try { login.child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'account/login/cancel', params: { loginId: login.loginId } })}\n`); } catch { /* closed */ } }
-    const L = login; setTimeout(() => { if (L.state === 'waiting') { L.state = 'cancelled'; try { L.child.kill(); } catch { /* gone */ } mine.delete(L.child.pid); fsp.rm(L.tmp, { recursive: true, force: true }).catch(() => {}); onChange(); } }, 300);
+    const L = login; setTimeout(() => { if (L.state === 'waiting') { L.state = 'cancelled'; try { L.child.kill(); } catch { /* gone */ } mine.delete(L.child.pid); fsp.rm(L.tmp, { recursive: true, force: true }).catch(() => { }); onChange(); } }, 300);
   }
   const loginOut = () => (login ? { state: login.state, url: login.url || '', note: login.note || '', name: login.name || '' } : null);
 
@@ -273,7 +273,7 @@ export function createCodexAccounts({ dir, seat, bin, procs = async () => [], op
     const a = find(id); if (!a) return { ok: false, code: 'noAccount' };
     if (id === seatId) return { ok: false, code: 'inSeat' };
     st.list = st.list.filter((x) => x !== a); st.order = st.order.filter((x) => x !== id); save();
-    await fsp.rm(home(id), { recursive: true, force: true }).catch(() => {});
+    await fsp.rm(home(id), { recursive: true, force: true }).catch(() => { });
     log(`codex: account removed (${a.email || id})`);
     onChange();
     return { ok: true };
@@ -308,8 +308,8 @@ export function createCodexAccounts({ dir, seat, bin, procs = async () => [], op
   }
   const timers = [];
   function start() {
-    syncSeat().then(tick).catch(() => {});
-    timers.push(setInterval(() => syncSeat().catch(() => {}), 10_000), setInterval(() => tick().catch(() => {}), 60_000));
+    syncSeat().then(tick).catch(() => { });
+    timers.push(setInterval(() => syncSeat().catch(() => { }), 10_000), setInterval(() => tick().catch(() => { }), 60_000));
     for (const x of timers) x.unref?.();
   }
   function stop() { for (const x of timers) clearInterval(x); if (login?.state === 'waiting') addCancel(); }

@@ -1,4 +1,4 @@
-// My Office in the editor's side bar: the office's small panel (http://127.0.0.1:4310/panel) in a webview, so the
+// CTS Office in the editor's side bar: the office's small panel (http://127.0.0.1:4310/panel) in a webview, so the
 // sessions, what waits for your approval and the plans' limits are where you work. While the office isn't running it
 // says so, and looks again every 10 seconds. Installed by `my-office install` (server/vsix.mjs packs this folder).
 const vscode = require('vscode');
@@ -23,8 +23,8 @@ function activate(context) {
         if (want === shown) return;
         shown = want;
         view.webview.html = want === 'down'
-          ? page(`<p>${vscode.env.language.startsWith('vi') ? 'Văn phòng chưa chạy. Bật bằng lệnh' : "My Office isn't running. Start it with"} <code>my-office start</code>.</p>`, port)
-          : page(`<iframe src="http://127.0.0.1:${port}/panel?embed=ide" title="My Office"></iframe>`, port);
+          ? page(`<p>${vscode.env.language.startsWith('vi') ? 'Văn phòng chưa chạy. Bật bằng lệnh' : "CTS Office isn't running. Start it with"} <code>my-office start</code>.</p>`, port)
+          : page(`<iframe src="http://127.0.0.1:${port}/panel?embed=ide" title="CTS Office"></iframe>`, port);
       };
       show();
       timer = setInterval(show, 10_000);
@@ -33,4 +33,4 @@ function activate(context) {
   };
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('myOffice.panel', provider, { webviewOptions: { retainContextWhenHidden: true } }));
 }
-module.exports = { activate, deactivate() {} };
+module.exports = { activate, deactivate() { } };
