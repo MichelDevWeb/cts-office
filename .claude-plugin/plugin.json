@@ -1,6 +1,6 @@
 {
-  "name": "my-office",
-  "description": "A 3D office for your Claude Code sessions: live agents, approve from the office, RAM per session and Mac cleanup",
-  "version": "0.1.0",
-  "keywords": ["dashboard", "sessions", "agents", "visualization", "3d", "three.js", "monitoring"]
+  "name": "cts-office",
+  "description": "CTS Office: A 3D IT Office & Co-living workspace for Antigravity (Gemini), Claude Code & GitHub Actions sessions, with live RAM monitoring and Mac cleanup.",
+  "version": "0.5.0",
+  "keywords": ["cts-office", "dashboard", "sessions", "agents", "antigravity", "gemini", "claude", "visualization", "3d", "three.js", "monitoring"]
 }

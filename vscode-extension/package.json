@@ -1,22 +1,22 @@
 {
   "name": "my-office-panel",
-  "displayName": "My Office",
-  "description": "My Office in the side bar: your Claude Code sessions, what waits for your approval, your plans' limits.",
+  "displayName": "CTS Office",
+  "description": "CTS Office in the side bar: your Antigravity (Gemini), Claude Code & GitHub Actions sessions, approvals, and plan limits.",
   "version": "0.1.0",
   "publisher": "my-office",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/khanh020905/my-office.git" },
+  "repository": { "type": "git", "url": "https://github.com/MichelDevWeb/cts-office.git" },
   "engines": { "vscode": "^1.80.0" },
   "categories": ["Other"],
   "activationEvents": ["onView:myOffice.panel"],
   "main": "./extension.js",
   "contributes": {
-    "viewsContainers": { "activitybar": [{ "id": "myOffice", "title": "My Office", "icon": "media/icon.svg" }] },
-    "views": { "myOffice": [{ "type": "webview", "id": "myOffice.panel", "name": "My Office" }] },
+    "viewsContainers": { "activitybar": [{ "id": "myOffice", "title": "CTS Office", "icon": "media/icon.svg" }] },
+    "views": { "myOffice": [{ "type": "webview", "id": "myOffice.panel", "name": "CTS Office" }] },
     "configuration": {
-      "title": "My Office",
+      "title": "CTS Office",
       "properties": {
-        "myOffice.port": { "type": "number", "default": 4310, "description": "The port My Office runs on (OFFICE_PORT)." }
+        "myOffice.port": { "type": "number", "default": 4310, "description": "The port CTS Office runs on (OFFICE_PORT)." }
       }
     }
   }

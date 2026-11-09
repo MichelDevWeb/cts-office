@@ -1,41 +1,41 @@
-# My Office
+# CTS Office
 
-[![npm](https://img.shields.io/npm/v/claude-my-office?label=npm&color=cb3837)](https://www.npmjs.com/package/claude-my-office) [![CI](https://github.com/khanh020905/my-office/actions/workflows/ci.yml/badge.svg)](https://github.com/khanh020905/my-office/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+<p align="center">
+  <img src="public/logo.svg" alt="CTS Office Logo" width="540" />
+</p>
+
+[![GitHub Repo](https://img.shields.io/badge/GitHub-MichelDevWeb%2Fcts--office-2563EB?logo=github)](https://github.com/MichelDevWeb/cts-office) [![CI](https://github.com/MichelDevWeb/cts-office/actions/workflows/ci.yml/badge.svg)](https://github.com/MichelDevWeb/cts-office/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-06B6D4)](LICENSE)
 
 [English](README.md) · Tiếng Việt
 
-![My Office: tầng công ty với các phiên đang làm việc](docs/media/demo.gif)
+![CTS Office: tầng công ty với các phiên đang làm việc](docs/media/demo.gif)
 
-Văn phòng chibi 3D cho thấy các session Claude Code đang làm gì, kèm bảng "Máy Mac" để xem RAM, CPU, ổ đĩa và giải phóng.
+**CTS Office** là văn phòng IT 3D kiêm khu lưu trú (Co-living 24/7) hiển thị trực tiếp các phiên làm việc của **Antigravity (Gemini)**, **Claude Code**, **GitHub Actions CI/CD** và **Codex**, kèm bảng **Máy Mac** để giám sát RAM, CPU, ổ đĩa và dọn dẹp 1-chạm.
 
-Mở: http://localhost:4310 · Xem thử không cần Claude Code: http://localhost:4310/?demo · Xem online, không cần cài: https://khanh020905.github.io/my-office/vi/
+Mở: http://localhost:4310 · Xem thử chế độ Demo: http://localhost:4310/?demo · Xem online: https://micheldevweb.github.io/cts-office/vi/
 
-**Có câu hỏi hay ý tưởng?** Hỏi ở [Discussions → Q&A](https://github.com/khanh020905/my-office/discussions/categories/q-a), góp ý ở [Ideas](https://github.com/khanh020905/my-office/discussions/categories/ideas), hoặc khoe văn phòng của bạn ở [Show and tell](https://github.com/khanh020905/my-office/discussions/categories/show-and-tell).
+**Có câu hỏi hay ý tưởng?** Hỏi ở [Discussions → Q&A](https://github.com/MichelDevWeb/cts-office/discussions/categories/q-a), góp ý ở [Ideas](https://github.com/MichelDevWeb/cts-office/discussions/categories/ideas), hoặc khoe văn phòng của bạn ở [Show and tell](https://github.com/MichelDevWeb/cts-office/discussions/categories/show-and-tell).
 
-Chạy được trên macOS, Linux và Windows (bảng máy đọc từng hệ điều hành theo cách riêng; mở cửa sổ IDE và thoát app chỉ có trên macOS). Giao diện mặc định là tiếng Anh; đổi sang tiếng Việt trong **Cài đặt → Ngôn ngữ** (hoặc đặt `OFFICE_LANG=vi`).
+Chạy được trên macOS, Linux và Windows (bảng máy đọc từng hệ điều hành theo cách riêng; mở cửa sổ IDE và thoát app chỉ có trên macOS). Đổi ngôn ngữ Tiếng Việt / Tiếng Anh trong **Cài đặt → Ngôn ngữ** (hoặc đặt `OFFICE_LANG=vi`).
 
-> My Office là dự án cộng đồng, không do Anthropic làm, bảo trợ hay liên kết.
+> CTS Office được phát triển và tuỳ biến bởi [MichelDevWeb](https://github.com/MichelDevWeb), không liên kết với Anthropic, Google hay GitHub.
 
-## Cài
-
-```bash
-npm install -g claude-my-office   # (lệnh nó cài là my-office)
-my-office install --service   # thêm hook vào ~/.claude/settings.json + chạy nền khi đăng nhập
-my-office doctor              # kiểm tra Node, curl, server, đủ hook, dịch vụ nền
-```
-
-Thử không cần cài: `npx claude-my-office start` (hook vẫn cần `npx claude-my-office install`). Cài bằng npm thì dữ liệu (cài đặt, mã
-PIN điện thoại, kho lịch sử) nằm ở `~/.my-office`, nên nâng bản (`npm install -g claude-my-office@latest`) không mất gì.
-
-Cài từ mã nguồn (để sửa code):
+## Cài đặt & Khởi chạy
 
 ```bash
-git clone https://github.com/khanh020905/my-office.git && cd my-office
+git clone https://github.com/MichelDevWeb/cts-office.git && cd cts-office
 npm install
-node bin/cli.mjs install --service   # cùng các lệnh như `my-office …`, dữ liệu ở data/
+npm run dev   # Mở http://localhost:4310 (tự động nhận diện Antigravity Gemini & Claude Code)
 ```
 
-`install` sao lưu `settings.json` trước khi sửa và chỉ thêm hook của My Office (chạy lại không thêm trùng). Gỡ: `my-office uninstall` (cài từ mã nguồn: `node bin/cli.mjs uninstall`).
+Để cài đặt thêm hook sự kiện cho Claude Code, thanh menu macOS và bảng điều khiển trong IDE (Antigravity / VS Code / Cursor):
+
+```bash
+node bin/cli.mjs install --service   # thêm hook vào ~/.claude/settings.json + chạy nền khi đăng nhập
+node bin/cli.mjs doctor              # kiểm tra Node, curl, server, phiên Antigravity/Claude và dịch vụ nền
+```
+
+`install` sao lưu `settings.json` trước khi sửa và chỉ thêm hook của CTS Office (chạy lại không thêm trùng). Gỡ: `node bin/cli.mjs uninstall`.
 
 | Lệnh | Việc |
 | --- | --- |
@@ -196,4 +196,4 @@ npm run build && npm run test:e2e
 
 ## Giấy phép
 
-[MIT](LICENSE). Tên và logo thương hiệu nhắc tới trong dự án vẫn thuộc về chủ sở hữu; My Office không liên kết với các thương hiệu đó.
+[MIT](LICENSE) © [MichelDevWeb (CTS Office)](https://github.com/MichelDevWeb). Tên và logo thương hiệu nhắc tới trong dự án vẫn thuộc về chủ sở hữu; CTS Office không liên kết với các thương hiệu đó.

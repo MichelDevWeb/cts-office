@@ -1,20 +1,24 @@
 {
-  "name": "claude-my-office",
+  "name": "cts-office",
   "version": "0.5.0",
-  "description": "A 3D office for your Claude Code sessions that also looks after your Mac: live agents, approve from the office, RAM per session, forgotten dev servers, cleanup.",
+  "description": "CTS Office: A 3D IT Office & Co-living workspace for Antigravity (Gemini), Claude Code & GitHub Actions sessions, with live Mac monitoring and one-click cleanup.",
+  "author": "MichelDevWeb (https://github.com/MichelDevWeb)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/khanh020905/my-office.git"
+    "url": "https://github.com/MichelDevWeb/cts-office.git"
   },
-  "homepage": "https://github.com/khanh020905/my-office#readme",
+  "homepage": "https://github.com/MichelDevWeb/cts-office#readme",
   "bugs": {
-    "url": "https://github.com/khanh020905/my-office/issues"
+    "url": "https://github.com/MichelDevWeb/cts-office/issues"
   },
   "keywords": [
+    "cts-office",
+    "antigravity",
+    "gemini",
     "claude-code",
     "claude",
-    "anthropic",
+    "github-actions",
     "ai-agents",
     "dashboard",
     "office",
@@ -25,6 +29,7 @@
   ],
   "type": "module",
   "bin": {
+    "cts-office": "bin/cli.mjs",
     "my-office": "bin/cli.mjs"
   },
   "files": [

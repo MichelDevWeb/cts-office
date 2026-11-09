@@ -266,7 +266,7 @@ setInterval(() => {
 const trophies = createTrophies({ dataDir: DATA_DIR, claudeDir: CLAUDE_DIR, today, deployRe: DEPLOY_RE, tr, num, onChange: (t, earned) => broadcast({ k: 'trophies', t, earned }) });
 
 // Git: the session most recently active in a repository gets its commit / push / CI animation
-const sessionsIn = (root) => [...sessions.values()].filter((s) => s.cwd && git.repoOf(s.cwd)?.root === root).sort((a, b) => (b.lastEventAt || 0) - (a.lastEventAt || 0));
+const sessionsIn = (root) => [...sessions.values()].filter((s) => s.agent !== 'github' && s.cwd && git.repoOf(s.cwd)?.root === root).sort((a, b) => (b.lastEventAt || 0) - (a.lastEventAt || 0));
 function gitEvent(r, type, label) {
   const s = sessionsIn(r.root)[0]; if (!s) return;
   if (type === 'commit') { rollDay(); stats.commit = (stats.commit || 0) + 1; dirty = true; }   // (today's letters in the lobby's post box)
@@ -274,13 +274,37 @@ function gitEvent(r, type, label) {
   pushFeed(e); broadcast({ k: 'ev', e, s: pub(s), stats }); chat.onEvent(e);
 }
 const git = createGit({
-  onRepo: (r) => { for (const s of sessionsIn(r.root)) broadcast({ k: 'sess', s: pub(s) }); },
+  onRepo: (r) => {
+    for (const s of sessionsIn(r.root)) broadcast({ k: 'sess', s: pub(s) });
+    syncGhActionSession(r);
+  },
   onCommit: (r, subject) => gitEvent(r, 'commit', clip(redact(oneLine(subject)), 64)),
   onPush: (r) => gitEvent(r, 'push', r.branch),
-  onCi: (r) => { gitEvent(r, r.ci === 'red' ? 'cired' : 'cigreen', r.ciName); ciCard(r); },
+  onCi: (r) => { gitEvent(r, r.ci === 'red' ? 'cired' : 'cigreen', r.ciName); ciCard(r); syncGhActionSession(r); },
   onRelease: (r, tag) => gitEvent(r, 'release', clip(redact(oneLine(tag)), 40)),   // (four of them off to the photo booth: people/photobooth.js)
 });
-const pollGit = () => git.poll([...sessions.values()].map((s) => s.cwd));
+const pollGit = () => git.poll([...new Set([...sessions.values()].map((s) => s.cwd).filter(Boolean))]);
+
+// Synchronize a dedicated GitHub Actions CI/CD runner character when a repository has an active or recent workflow run
+function syncGhActionSession(r) {
+  if (!r || !r.ci || process.env.FAKE_GH_DIR) return;
+  const key = `gh:${r.name}`;
+  let s = sessions.get(key);
+  const now = Date.now();
+  if (!s) {
+    s = newSession(key);
+    s.sid = key; s.agent = 'github'; s.role = 'DevOps'; s.roleKind = 'devops'; s.fromGh = true;
+    s.name = `${r.name}-ci`; s.title = `GitHub Actions · ${r.ciName || r.name}`; s.cwd = r.root;
+    sessions.set(key, s); sidToKey.set(key, key);
+  }
+  s.title = `GitHub Actions · ${r.ciName || r.name}`;
+  s.link = r.ciUrl || null;
+  s.lastEventAt = now;
+  s.status = r.ci === 'running' ? 'work' : 'rest';
+  s.busy = r.ci === 'running';
+  s.last = { type: r.ci === 'red' ? 'fail' : r.ci === 'running' ? 'test' : 'testok', label: r.ciName || 'CI workflow' };
+  broadcast({ k: 'sess', s: pub(s) });
+}
 
 /* ---------- "Sửa luôn": a repository's CI gone red. A card in the chat from the session working in it; its button hands
    Claude the failing run to fix (a note into the conversation while it works, else a message that carries it on, as
@@ -333,6 +357,7 @@ function freeDesk() {
 }
 const pubSub = (x) => ({ id: x.id, type: x.type, desc: x.desc || '', last: x.last || null, startedAt: x.startedAt, endedAt: x.endedAt || null, steps: x.steps || 0, model: x.model || '' });
 const pub = (s) => ({ id: s.id, pid: s.pid, name: s.name, title: s.title || '', dir: tilde(s.cwd), link: s.link, desk: s.desk, status: s.status, lastPrompt: s.lastPrompt && oneLine(unwrapPaste(s.lastPrompt)),
+  agent: s.agent || 'claude', role: s.role || '', roleKind: s.roleKind || '',
   taskStart: s.taskStart, counts: s.counts, subs: Object.values(s.subs).map(pubSub), doneSubs: (s.doneSubs || []).map(pubSub), last: s.last, acct: acctOf(s),
   entry: s.entry || '', moved: s.parked ? { to: acctShown(s.parked.to), at: s.parked.at } : null,
   lastAt: s.lastEventAt || s.createdAt, doneAt: s.doneAt || 0, todos: s.todos || [], lastReply: s.lastReply || '', origin: s.origin || '',
@@ -880,7 +905,7 @@ async function sameProcess(j) {
 }
 async function doScan() {
   let files = [];
-  try { files = (await fsp.readdir(SESS_DIR)).filter((f) => f.endsWith('.json')); } catch { return; }
+  try { files = (await fsp.readdir(SESS_DIR)).filter((f) => f.endsWith('.json')); } catch { files = []; }
   const live = new Set();
   for (const f of files) {
     let j;
@@ -914,6 +939,214 @@ async function doScan() {
   for (const [key, s] of sessions) {
     if (s.fromFile && !live.has(key) && !(s.parked && Date.now() - s.parked.at < PARK_MS)) dropSession(key, s);   // (a moved one waits at its desk)
   }
+  await scanAgSessions().catch(() => {});
+}
+
+/* ---------- Antigravity (Gemini) native brain session discovery & live transcript tailer ---------- */
+const AG_BRAIN_DIR = process.env.OFFICE_AG_BRAIN_DIR || path.join(HOME, '.gemini', 'antigravity', 'brain');
+const agRootCache = new Map();
+function agArg(v) {
+  if (typeof v !== 'string') return v;
+  try { return JSON.parse(v); } catch { return v; }
+}
+function agArgs(args) {
+  if (!args || typeof args !== 'object') return {};
+  return Object.fromEntries(Object.entries(args).map(([k, v]) => [k, agArg(v)]));
+}
+function agToolToClaude(tc) {
+  const n = tc?.name || '', a = agArgs(tc?.args);
+  switch (n) {
+    case 'read_file': return { name: 'Read', input: { file_path: String(a.Path || '') } };
+    case 'edit_file': return { name: 'Edit', input: { file_path: String(a.Path || '') } };
+    case 'write_file': return { name: 'Write', input: { file_path: String(a.Path || '') } };
+    case 'run_command': return { name: 'Bash', input: { command: String(a.CommandLine || ''), description: String(a.toolSummary || '') } };
+    case 'search_web': return { name: 'WebSearch', input: { query: String(a.query || '') } };
+    case 'invoke_subagent': return { name: 'Agent', input: { subagent_type: String(a.Role || a.TypeName || 'agent'), description: String(a.Prompt || '') } };
+    case 'ask_question': return { name: 'AskUserQuestion', input: { questions: Array.isArray(a.questions) ? a.questions : [] } };
+    case 'call_mcp_tool': return { name: `mcp__${a.ServerName || 'mcp'}__${a.ToolName || 'tool'}`, input: a.Arguments || {} };
+    default:
+      if (n.startsWith('mcp_')) return { name: `mcp__${n.slice(4)}`, input: a };
+      return { name: n, input: a };
+  }
+}
+function agUserRequest(content) {
+  const m = /<USER_REQUEST>\s*([\s\S]*?)\s*<\/USER_REQUEST>/.exec(String(content || ''));
+  return m ? m[1].trim() : '';
+}
+function agProjectRoot(filePath) {
+  const p = String(filePath || '').trim();
+  if (!p.startsWith('/') || p.includes('/.gemini/') || p.startsWith('/tmp/') || p.startsWith('/var/')) return '';
+  const dir = path.dirname(p);
+  if (agRootCache.has(dir)) return agRootCache.get(dir);
+  let cur = dir, gitRoot = '', pkgRoot = '';
+  while (cur && cur.length > HOME.length && cur !== path.dirname(cur)) {
+    if (!gitRoot && fs.existsSync(path.join(cur, '.git'))) { gitRoot = cur; break; }
+    if (!pkgRoot && fs.existsSync(path.join(cur, 'package.json'))) pkgRoot = cur;
+    cur = path.dirname(cur);
+  }
+  const out = gitRoot || pkgRoot || dir;
+  agRootCache.set(dir, out);
+  return out;
+}
+function agDetectCwd(lines) {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const l = lines[i];
+    if (!l) continue;
+    let j; try { j = JSON.parse(l); } catch { continue; }
+    if (Array.isArray(j.tool_calls)) {
+      for (const tc of j.tool_calls) {
+        const a = agArgs(tc?.args);
+        const r = agProjectRoot(a.Path);
+        if (r) return r;
+      }
+    }
+    if (j.type === 'USER_INPUT' && typeof j.content === 'string') {
+      const m = /(?:Active Document|Other open documents:\s*-)\s*(\/[^\n(]+?)(?:\s*\(|\r?\n|$)/.exec(j.content);
+      if (m) { const r = agProjectRoot(m[1]); if (r) return r; }
+    }
+  }
+  return '';
+}
+async function scanAgSessions() {
+  if (AI_OFF || (process.env.OFFICE_CLAUDE_BIN && !process.env.OFFICE_AG_BRAIN_DIR)) return;
+  let dirs = [];
+  try { dirs = await fsp.readdir(AG_BRAIN_DIR); } catch { return; }
+  const now = Date.now(), found = [];
+  for (const cid of dirs) {
+    if (!/^[0-9a-f-]{20,64}$/i.test(cid)) continue;
+    const tFile = path.join(AG_BRAIN_DIR, cid, '.system_generated', 'logs', 'transcript.jsonl');
+    const st = await fsp.stat(tFile).catch(() => null);
+    if (st && st.size > 0) found.push({ cid, tFile, mtime: st.mtimeMs, size: st.size });
+  }
+  found.sort((a, b) => b.mtime - a.mtime);
+  const recent = found.filter((x) => now - x.mtime < 18 * 3600_000).slice(0, 4);
+  if (!recent.length && found.length && ag?.out()?.running) recent.push(found[0]);
+  const liveAg = new Set();
+  for (const { cid, tFile, mtime, size } of recent) {
+    const key = 'ag:' + cid;
+    liveAg.add(key);
+    let s = sessions.get(key);
+    const isInitial = !s;
+    if (!s) {
+      s = newSession(key);
+      s.sid = cid; s.agent = 'antigravity'; s.role = 'AI Eng'; s.roleKind = 'ai';
+      s.fromAg = true; s.origin = 'Antigravity'; s.transcript = tFile; s.agStep = -1;
+      sessions.set(key, s); sidToKey.set(cid, key);
+    }
+    if (s.agMtime === mtime && s.agSize === size) {
+      if (s.status === 'work' && now - Math.max(s.lastEventAt, mtime) > 90_000) {
+        s.status = 'rest'; s.busy = false; s.inTool = false;
+        broadcast({ k: 'sess', s: pub(s) });
+      }
+      continue;
+    }
+    let raw = '';
+    try { raw = await fsp.readFile(tFile, 'utf8'); } catch { continue; }
+    const lines = raw.trim().split('\n').filter(Boolean);
+    const detectedCwd = agDetectCwd(lines) || s.cwd || ROOT;
+    if (detectedCwd && s.cwd !== detectedCwd) { s.cwd = detectedCwd; noteDir(s.cwd); }
+    s.name = `${base(s.cwd) || 'gemini'}-ag`;
+    const prevStep = s.agStep ?? -1;
+    let maxStep = prevStep, lastJ = null, lastTs = mtime;
+    let totalIn = 0, totalCache = 0, totalOut = 0, lastCtx = 0;
+    const initEvents = [];
+    for (const line of lines) {
+      let j; try { j = JSON.parse(line); } catch { continue; }
+      const step = typeof j.step_index === 'number' ? j.step_index : -1;
+      const ts = j.created_at ? Date.parse(j.created_at) || mtime : mtime;
+      if (step > maxStep) maxStep = step;
+      lastJ = j; lastTs = ts;
+      if (isInitial && !s.createdAt) s.createdAt = ts;
+      const day = new Date(ts).toLocaleDateString('sv');
+      if (!s.dayFirst || s.dayFirst.day !== day) s.dayFirst = { day, at: ts };
+      if (j.type === 'USER_INPUT') {
+        const req = agUserRequest(j.content);
+        if (!req) continue;
+        const clean = clip(redact(oneLine(unwrapPaste(req)).replace(/^\/\S+\s+/, '')), 90);
+        if (!s.title) s.title = clip(clean, 60);
+        s.lastPrompt = clean;
+        s.taskStart = ts;
+        s.lastEventAt = Math.max(s.lastEventAt, ts);
+        const evObj = { id: ++seq, ts, sess: s.id, name: s.name, type: 'prompt', label: clip(clean, 64) };
+        if (isInitial) initEvents.push(evObj);
+        else if (step > prevStep) {
+          s.status = 'work'; s.busy = true;
+          stats.prompts++; dirty = true;
+          pushFeed(evObj); broadcast({ k: 'ev', e: evObj, s: pub(s), stats }); chat.onEvent(evObj);
+        }
+      } else if (j.type === 'PLANNER_RESPONSE') {
+        s.lastEventAt = Math.max(s.lastEventAt, ts);
+        if (j.input_tokens || j.cache_read_tokens || j.output_tokens) {
+          totalIn += j.input_tokens || 0;
+          totalCache += j.cache_read_tokens || 0;
+          totalOut += j.output_tokens || 0;
+          lastCtx = (j.input_tokens || 0) + (j.cache_read_tokens || 0) + (j.output_tokens || 0);
+        }
+        if (Array.isArray(j.tool_calls) && j.tool_calls.length) {
+          for (const tc of j.tool_calls) {
+            const mapped = agToolToClaude(tc);
+            const c = classify(mapped.name, mapped.input);
+            const runner = mapped.name === 'Bash' && testRunner(mapped.input?.command);
+            if (runner) Object.assign(c, { type: 'test', runner });
+            s.last = { type: c.type, label: c.label };
+            const evObj = { id: ++seq, ts, sess: s.id, name: s.name, type: c.type, label: c.label, ...(c.desc ? { desc: c.desc } : {}), ...(c.runner ? { runner: c.runner } : {}) };
+            if (isInitial) {
+              const ck = COUNT_OF[mapped.name];
+              if (ck) s.counts[ck]++;
+              initEvents.push(evObj);
+            } else if (step > prevStep) {
+              count(s, mapped.name, null);
+              s.status = mapped.name === 'AskUserQuestion' ? 'wait' : 'work';
+              s.busy = s.status === 'work'; s.inTool = true;
+              pushFeed(evObj); broadcast({ k: 'ev', e: evObj, s: pub(s), stats }); chat.onEvent(evObj);
+            }
+          }
+        } else {
+          if (typeof j.content === 'string' && j.content.trim()) {
+            s.lastReply = clip(redact(oneLine(j.content)), 240);
+          }
+          s.doneAt = ts;
+          const evObj = { id: ++seq, ts, sess: s.id, name: s.name, type: 'stop', label: clip(s.lastReply || '', 90) };
+          if (isInitial) initEvents.push(evObj);
+          else if (step > prevStep) {
+            s.status = 'rest'; s.busy = false; s.inTool = false;
+            pushFeed(evObj); broadcast({ k: 'ev', e: evObj, s: pub(s), stats }); chat.onEvent(evObj);
+          }
+        }
+      }
+    }
+    if (lastCtx > 0) {
+      s.usage = {
+        model: ag?.out()?.picked || 'Gemini',
+        cost: (totalIn * 1.25 + totalCache * 0.3 + totalOut * 10) / 1e6,
+        ctx: lastCtx,
+        out: totalOut,
+      };
+    }
+    s.agStep = maxStep; s.agMtime = mtime; s.agSize = size;
+    s.lastEventAt = Math.max(s.lastEventAt, lastTs, mtime);
+    const age = now - Math.max(lastTs, mtime);
+    if (lastJ) {
+      const asks = Array.isArray(lastJ.tool_calls) && lastJ.tool_calls.some((tc) => tc.name === 'ask_question');
+      const finalReply = lastJ.type === 'PLANNER_RESPONSE' && (!lastJ.tool_calls || !lastJ.tool_calls.length);
+      if (asks && age < 1800_000) { s.status = 'wait'; s.busy = false; s.inTool = false; }
+      else if (finalReply) { s.status = 'rest'; s.busy = false; s.inTool = false; }
+      else if (age < 90_000) { s.status = 'work'; s.busy = true; s.inTool = true; }
+      else { s.status = 'rest'; s.busy = false; s.inTool = false; }
+    }
+    if (isInitial) {
+      if (!feed.some((e) => e.sess === s.id)) {
+        for (const evObj of initEvents.slice(-4)) pushFeed(evObj);
+      }
+      broadcast({ k: 'sess', s: pub(s) });
+      pollGit();
+    } else {
+      broadcast({ k: 'sess', s: pub(s) });
+    }
+  }
+  for (const [key, s] of sessions) {
+    if (s.fromAg && !liveAg.has(key)) dropSession(key, s);
+  }
 }
 // The chat's title as the IDE shows it: your rename (`custom-title`) wins over the generated one (`ai-title`). Both are
 // lines in the transcript; the generated one repeats often, so the tail is enough. A rename is looked for once in
@@ -921,6 +1154,7 @@ async function doScan() {
 const transcriptOf = (s) => s.transcript || (s.sid && s.cwd ? path.join(CLAUDE_DIR, 'projects', s.cwd.replace(/[^A-Za-z0-9-]/g, '-'), `${s.sid}.jsonl`) : null);
 const lastField = (text, field) => { let m, out = null; const re = new RegExp(`"${field}":"((?:[^"\\\\]|\\\\.)*)"`, 'g'); while ((m = re.exec(text))) out = m[1]; if (out == null) return null; try { return JSON.parse(`"${out}"`); } catch { return null; } };
 async function refreshTitle(s, first = false) {
+  if (s.fromAg || s.fromGh) return;
   const file = transcriptOf(s); if (!file) return;
   s.titleAt = Date.now();
   let fh;
@@ -957,7 +1191,7 @@ async function recallTask(s) {
   broadcast({ k: 'sess', s: pub(s) });
 }
 function dropSession(key, s) {
-  if (s.fromFile && !taskSids.has(s.sid) && !s.viaOffice) chat.onLeft(s.title || s.name);
+  if ((s.fromFile || s.fromAg) && !taskSids.has(s.sid) && !s.viaOffice) chat.onLeft(s.title || s.name);
   sessions.delete(key);
   if (s.sid && sidToKey.get(s.sid) === key) sidToKey.delete(s.sid);
   broadcast({ k: 'gone', id: s.id });
@@ -971,7 +1205,7 @@ setInterval(() => {
     // suite) is not quiet; a tool still open after 10 minutes probably lost its PostToolUse.
     if (s.status === 'work' && !s.busy && (!s.inTool || now - s.lastEventAt > 600_000) && now - s.lastEventAt > 20_000) { s.status = 'rest'; broadcast({ k: 'sess', s: pub(s) }); }
     // Sessions seen only through hooks (no session file) leave after 10 quiet minutes.
-    if (!s.fromFile && now - s.lastEventAt > 600_000) dropSession(key, s);
+    if (!s.fromFile && !s.fromAg && !s.fromGh && now - s.lastEventAt > 600_000) dropSession(key, s);
     // A subagent that went quiet is finished: 90 s once its session rests, 5 min while the session still works.
     for (const [id, sub] of Object.entries(s.subs)) if (now - sub.seenAt > (s.status === 'rest' ? 90_000 : 300_000)) { finishSub(s, id, now); broadcast({ k: 'sess', s: pub(s) }); }
   }
@@ -982,6 +1216,7 @@ setInterval(async () => {
   if (usageBusy) return; usageBusy = true;
   try {
     for (const s of sessions.values()) {
+      if (s.fromAg || s.fromGh) continue;
       const main = s.transcript || (s.sid && s.cwd ? path.join(CLAUDE_DIR, 'projects', s.cwd.replace(/[^A-Za-z0-9-]/g, '-'), `${s.sid}.jsonl`) : null);
       if (!main) continue;
       if (!s.usage) { s.usage = blankUsage(); s.usage.interrupted = 0; }
@@ -1024,6 +1259,9 @@ async function onHook(p) {
   }
   const now = Date.now();
   s.lastEventAt = now;
+  if (typeof p.agent_kind === 'string' && ['claude', 'antigravity', 'gemini', 'github', 'codex'].includes(p.agent_kind)) s.agent = p.agent_kind;
+  if (typeof p.role === 'string') s.role = clip(p.role, 24);
+  if (typeof p.role_kind === 'string') s.roleKind = clip(p.role_kind, 16);
   { const day = new Date(now).toLocaleDateString('sv'); if (ev !== 'SessionEnd' && s.dayFirst?.day !== day) s.dayFirst = { day, at: now }; }   // (its first sign of life each day: the lobby's attendance terminal)
   if (p.transcript_path) s.transcript = p.transcript_path;
   if (ev !== 'SessionEnd') projectOf(s.cwd || p.cwd).then((name) => tenure.touch(name, { at: now, turn: ev === 'Stop', cwd: s.cwd || p.cwd })).catch(() => {});   // (its project's working life: server/tenure.mjs)
@@ -1187,6 +1425,26 @@ async function readLog(s, n = 120, agentId = null) {
       let j;
       try { j = JSON.parse(line); } catch { continue; }
       if ((j.isSidechain && !agentId) || j.isMeta) continue;
+      if (j.type === 'USER_INPUT') {
+        const tsAg = j.created_at ? Date.parse(j.created_at) : 0;
+        const req = agUserRequest(j.content);
+        if (req) items.push({ role: 'user', text: clip(redact(unwrapPaste(req).trim()), 8000), imgs: Array.isArray(j.media) ? j.media.length : 0, ts: tsAg });
+        continue;
+      }
+      if (j.type === 'PLANNER_RESPONSE') {
+        const tsAg = j.created_at ? Date.parse(j.created_at) : 0;
+        if (typeof j.content === 'string' && j.content.trim()) {
+          items.push({ role: 'claude', text: clip(redact(j.content.trim()), 12000), ts: tsAg });
+        }
+        if (Array.isArray(j.tool_calls)) {
+          for (const tc of j.tool_calls) {
+            const mapped = agToolToClaude(tc);
+            const k = classify(mapped.name, mapped.input);
+            items.push({ role: 'tool', type: k.type, label: (k.tr && viCache[k.label]) || k.label, desc: k.desc ? viCache[k.desc] || k.desc : '', ts: tsAg });
+          }
+        }
+        continue;
+      }
       const ts = j.timestamp ? Date.parse(j.timestamp) : 0;
       const c = j.message?.content;
       if (j.type === 'user') {

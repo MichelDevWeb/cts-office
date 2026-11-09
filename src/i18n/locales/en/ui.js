@@ -1,8 +1,8 @@
 // The page markup (src/components/office), one group per component. The office's code fills most of it in later.
 export default {
   meta: {
-    title: 'My Office: a 3D office for your Claude Code sessions',
-    description: 'Each Claude Code session is a character at a desk in a 3D office. Approve permissions, watch RAM and plan limits, and see what every agent is doing. Free and open source.',
+    title: 'CTS Office: 3D IT Live-Work Hub for Claude, Antigravity & GitHub Actions',
+    description: 'A 3D IT office & co-living studio for Claude Code, Antigravity (Gemini), and GitHub Actions. Approve permissions, monitor system resources, and watch your IT team work and live.',
   },
   // shared by the replay bar and the timeline panel
   ranges: {
@@ -172,8 +172,8 @@ export default {
   stage: {
     chips: 'Sessions',
     lite: 'Sessions as a list',
-    emptyTitle: 'No Claude sessions open yet',
-    emptyText: 'Open Claude Code in Antigravity and a character will walk into the office.',
+    emptyTitle: 'No AI sessions open yet',
+    emptyText: 'Open Antigravity (Gemini) or Claude Code and a character will walk into the office.',
   },
   timeline: {
     title: 'Timeline',

@@ -10,6 +10,8 @@ export default {
     meetingSub: 'Meeting',
     library: 'THƯ VIỆN',
     librarySub: 'Library',
+    bedroom: 'PHÒNG NGỦ IT',
+    bedroomSub: 'Sleep Pods',
   },
   nameplate: 'GIÁM ĐỐC',
   slideSub: 'Tiến độ tuần này',

@@ -195,6 +195,7 @@ export function setup() {
     M1: [2.5, -0.3], M2: [2.5, 3.3], ...podNodes, ...(HQ ? wingGraph().nodes : {}),
     PA1: [9.3, -2.6], PA2: [9.3, -6.15], PA3: [11.7, -2.6], PA4: [11.7, -6.15], PA5: [9.3, 0.45], PA6: [11.7, 0.45],
     LG1: [9.3, 1.6], LG2: [12.2, 1.5], LGs: [9.5, 3.7], LGr: [12.75, 3.9], LG3: [9.0, 6.0], BK: [0.32, 8.4],   // (BK: in front of the karaoke box's door)
+    BDd: [7.4, 4.9], BDi: [7.2, 6.2], BDb: [7.1, 8.0], SHw: [-4.6, 7.6],   // (BD*: IT Sleep Pods bedroom; SHw: shower & laundry corner)
   } : {
     A: [-5.2, -3.3], BL: [-3.4, -3.15], T0: [-2.1, -3.15], T1: [0, -3.2], T2: [2.1, -3.15], D: [3.4, -3.1], E: [5.6, -3.2],
     F: [-6.3, -0.9], GL1: [-3.4, -0.9], U0: [-2.1, -0.9], U1: [0, -0.9], U2: [2.1, -0.9], GR1: [3.4, -0.9], P: [6.9, 0.6],
@@ -209,7 +210,8 @@ export function setup() {
     ['L0', 'DRi'], ['DRi', 'DRc'], ['DRi', 'DRw'], ['DRw', 'DRs'], ['L0', 'MTd'], ['MTd', 'MTi'], ['MTi', 'MF2'], ['MF2', 'MF1'], ['MF1', 'MF0'], ['MF0', 'MTf'], ['MTf', 'MTw'],
     ['MTw', 'MB0'], ['MB0', 'MB1'], ['MB1', 'MB2'], ['MB2', 'MTb'], ['MTb', 'MTi'], ['MTd', 'LBd'], ['LBd', 'LBi'], ['LBi', 'LBf'], ['LBi', 'LBm'], ['LBd', 'CE'], ['CE', 'R1'],
     ['CE', 'PA1'], ['PA1', 'PA2'], ['PA1', 'PA3'], ['PA2', 'PA4'], ['PA3', 'PA4'], ['PA1', 'PA5'], ['PA3', 'PA6'], ['PA5', 'PA6'],
-    ['PA5', 'LG1'], ['LG1', 'LG2'], ['LG1', 'LGs'], ['LGs', 'LG3'], ['LG3', 'R3'], ['LG2', 'LGr'], ...(HQ ? wingGraph().edges : [])]
+    ['PA5', 'LG1'], ['LG1', 'LG2'], ['LG1', 'LGs'], ['LGs', 'LG3'], ['LG3', 'R3'], ['LG2', 'LGr'],
+    ['R3', 'BDd'], ['BDd', 'BDi'], ['BDi', 'BDb'], ['BDb', 'R4'], ['WCi', 'SHw'], ...(HQ ? wingGraph().edges : [])]
     : [['A', 'BL'], ['BL', 'T0'], ['T0', 'T1'], ['T1', 'T2'], ['T2', 'D'], ['D', 'E'], ['A', 'F'], ['F', 'I'], ['F', 'GL1'], ['BL', 'GL1'],
     ['GL1', 'U0'], ['U0', 'U1'], ['U1', 'U2'], ['U2', 'GR1'], ['GR1', 'D'], ['GL1', 'GL2'], ['I', 'GL2'], ['GL2', 'V0'], ['V0', 'V1'], ['V1', 'V2'],
     ['V2', 'GR2'], ['GR1', 'GR2'], ['GR1', 'P'], ['P', 'E'], ['I', 'J'], ['J', 'K'], ['K', 'GL2'], ['K', 'L'], ['L', 'M'], ['M', 'GR2']];
@@ -239,6 +241,9 @@ export function setup() {
     brief: [spotAt(-1.75, -7.2, faceTo(-1.75, -7.2, 0.2, -5.6), 'MTw'), spotAt(2.35, -6.9, faceTo(2.35, -6.9, 0.2, -5.6), 'MTb')],
     wc: [spotAt(-7.3, 6.1, Math.PI / 2, 'ST1', false, { stall: 0 }), spotAt(-7.3, 7.4, Math.PI / 2, 'ST2', false, { stall: 1 })],
     sink: [spotAt(-7.25, 8.5, -Math.PI / 2, 'WCs')],
+    bunk: [spotAt(6.65, 6.22, -Math.PI / 2, 'BDi', true), spotAt(6.65, 8.05, -Math.PI / 2, 'BDb', true), spotAt(7.35, 6.6, -Math.PI / 2, 'BDi'), spotAt(7.35, 7.8, -Math.PI / 2, 'BDb')],
+    shower: [spotAt(-4.65, 7.75, 0, 'SHw'), spotAt(-5.12, 7.65, 0, 'SHw')],
+    gym: [spotAt(9.25, 2.65, Math.PI, 'LG1'), spotAt(9.55, 3.3, -Math.PI / 2, 'LGs')],
     dining: DINING,
   } : {
     library: [{ x: -6.3, z: -4.45, face: Math.PI, node: 'A' }, { x: -4.1, z: -4.45, face: Math.PI, node: 'A' }, { x: -5.2, z: -4.35, face: Math.PI, node: 'A' }],

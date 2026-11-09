@@ -3,16 +3,16 @@
    the 3D office fills the middle with a floating camera toolbar; drawers slide over the right side.
    ≤1100px the left sidebar becomes a chip row; ≤720px the activity column becomes a bottom sheet. */
 :root {
-  --bg: #0D1219; --bar: #111720; --side: #131922; --card: #18202B; --card-2: #1E2734; --card-3: #263040;
-  --line: rgba(255, 255, 255, .07); --line-2: rgba(255, 255, 255, .13);
-  --ink: #E8ECF4; --muted: #8D97AA; --faint: #5E687B;
-  --green: #3DDC84; --green-ink: #8FEDB8; --green-soft: rgba(61, 220, 132, .11);
+  --bg: #0A101D; --bar: #0D1526; --side: #0F182A; --card: #152138; --card-2: #1B2A46; --card-3: #233558;
+  --line: rgba(148, 196, 255, .09); --line-2: rgba(148, 196, 255, .17);
+  --ink: #ECF2FC; --muted: #93A6C4; --faint: #617494;
+  --green: #3DDC84; --green-ink: #8FEDB8; --green-soft: rgba(61, 220, 132, .12);
   --amber: #F2B544; --amber-soft: rgba(242, 181, 68, .12);   /* status only: waiting for approval, warnings */
-  /* the interface's own accent (selection, focus, the main action): the coral of the My Office mark, so amber keeps meaning
-     "someone is waiting for you" */
-  --accent: #EF8A5F; --accent-hi: #F5A07A; --accent-soft: rgba(239, 138, 95, .13); --accent-line: rgba(239, 138, 95, .6); --on-accent: #2A1307;
+  /* the interface's own accent (selection, focus, the main action): CTS Office blue gradient */
+  --accent: #3B82F6; --accent-hi: #38BDF8; --accent-grad: linear-gradient(135deg, #2563EB 0%, #06B6D4 100%);
+  --accent-soft: rgba(59, 130, 246, .16); --accent-line: rgba(56, 189, 248, .68); --on-accent: #041022;
   --red: #FF5F5F; --red-soft: rgba(255, 95, 95, .12);
-  --blue: #6AAEFF;
+  --blue: #60A5FA;
   --font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color-scheme: dark;

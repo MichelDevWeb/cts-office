@@ -14,6 +14,8 @@ export default {
     meetingSub: '',
     library: 'LIBRARY',
     librarySub: '',
+    bedroom: 'SLEEP PODS',
+    bedroomSub: 'IT Co-Living',
   },
   nameplate: 'DIRECTOR',
   slideSub: "This week's progress",

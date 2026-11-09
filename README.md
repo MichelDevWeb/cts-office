@@ -1,50 +1,50 @@
-# My Office
+# CTS Office
 
-[![npm](https://img.shields.io/npm/v/claude-my-office?label=npm&color=cb3837)](https://www.npmjs.com/package/claude-my-office) [![CI](https://github.com/khanh020905/my-office/actions/workflows/ci.yml/badge.svg)](https://github.com/khanh020905/my-office/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+<p align="center">
+  <img src="public/logo.svg" alt="CTS Office Logo" width="540" />
+</p>
+
+[![GitHub Repo](https://img.shields.io/badge/GitHub-MichelDevWeb%2Fcts--office-2563EB?logo=github)](https://github.com/MichelDevWeb/cts-office) [![CI](https://github.com/MichelDevWeb/cts-office/actions/workflows/ci.yml/badge.svg)](https://github.com/MichelDevWeb/cts-office/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-06B6D4)](LICENSE)
 
 English · [Tiếng Việt](README.vi.md)
 
-A 3D office where your Claude Code sessions come to work. Each session is a character at a desk:
+**CTS Office** is a 3D IT Office & 24/7 Co-living workspace where your **Antigravity (Gemini)**, **Claude Code**, **GitHub Actions CI/CD**, and **Codex** sessions come to work and live. Each session is an IT specialist character at a desk (`Tech Lead`, `Frontend`, `Backend`, `DevOps`, `QA`, `AI Agent`, `SecOps`):
 
 - it walks to the library to read files;
 - it types at its desk while it edits;
 - it goes to the server room to run commands;
-- it launches a rocket when you deploy.
+- it launches a rocket when you deploy;
+- it rests in the **24/7 Co-living quarters** (Sleep Pods, Shower & Laundry, IT Gym, and Energy Drink cooler).
 
-The office also looks after your Mac: RAM per session, forgotten dev servers, one-click cleanup.
+CTS Office also looks after your Mac: RAM per session, forgotten dev servers, and one-click cleanup.
 
-![My Office: the company floor with sessions at work](docs/media/demo.gif)
+![CTS Office: the company floor with sessions at work](docs/media/demo.gif)
 
-**Try it before you install anything.** The demo has made-up projects and needs no Claude Code: run `npm run dev` and
-open <http://localhost:4310/?demo>. Or try it online, nothing to install: <https://khanh020905.github.io/my-office/>
+**Try it before you install anything.** The demo has sample IT projects and needs no active AI agent: run `npm run dev` and
+open <http://localhost:4310/?demo>. Or try it online: <https://micheldevweb.github.io/cts-office/>
 (a static build of the same demo, published by `.github/workflows/pages.yml`).
 
-**Questions or ideas?** Ask in [Discussions → Q&A](https://github.com/khanh020905/my-office/discussions/categories/q-a), suggest something in
-[Ideas](https://github.com/khanh020905/my-office/discussions/categories/ideas), or show your office in [Show and tell](https://github.com/khanh020905/my-office/discussions/categories/show-and-tell).
+**Questions or ideas?** Ask in [Discussions → Q&A](https://github.com/MichelDevWeb/cts-office/discussions/categories/q-a), suggest something in
+[Ideas](https://github.com/MichelDevWeb/cts-office/discussions/categories/ideas), or show your office in [Show and tell](https://github.com/MichelDevWeb/cts-office/discussions/categories/show-and-tell).
 
-> My Office is a community project. It is not made by, endorsed by or affiliated with Anthropic.
+> CTS Office is customized and maintained by [MichelDevWeb](https://github.com/MichelDevWeb). It is an independent project and is not affiliated with Anthropic, Google, or GitHub.
 
 ## Quick start
 
-You need Node.js 20.9 or newer and Claude Code, on macOS, Linux or Windows. The machine panel (RAM, CPU, disk, dev
+You need Node.js 20.9 or newer on macOS, Linux or Windows, plus **Antigravity (Gemini)** and/or **Claude Code**. The machine panel (RAM, CPU, disk, dev
 servers, cleanup) reads each system its own way; opening a session's IDE window and quitting apps are macOS only.
 
 ```bash
-npm install -g claude-my-office   # (the command it installs is my-office)
-my-office install --service   # adds the hooks to ~/.claude/settings.json and runs the office at login
-my-office doctor              # checks Node, the server, every hook and the background service
+git clone https://github.com/MichelDevWeb/cts-office.git && cd cts-office
+npm install
+npm run dev          # http://localhost:4310 (live Antigravity Gemini & Claude Code sessions)
 ```
 
-Then open <http://localhost:4310>. To try it without installing: `npx claude-my-office start` (the hooks still need
-`npx claude-my-office install`). An npm install keeps its data (settings, the phone PIN, the history vault) in `~/.my-office`,
-so upgrading (`npm install -g claude-my-office@latest`) keeps it.
-
-From the source instead (to change the code):
+To also install the Claude Code hooks, menu bar item, and IDE sidebar panel:
 
 ```bash
-git clone https://github.com/khanh020905/my-office.git && cd my-office
-npm install
-node bin/cli.mjs install --service   # the same commands as `my-office …`, its data in data/
+node bin/cli.mjs install --service   # adds hooks to ~/.claude/settings.json and runs CTS Office at login
+node bin/cli.mjs doctor              # checks Node, the server, Antigravity/Claude sessions, and background service
 ```
 
 - `install` backs up `settings.json` before changing it and only adds My Office's own hooks. Running it again adds
@@ -640,4 +640,4 @@ request.
 
 ## Licence
 
-[MIT](LICENSE). The brand names and logos above stay their owners' trademarks; My Office is not affiliated with any of them.
+[MIT](LICENSE) © [MichelDevWeb (CTS Office)](https://github.com/MichelDevWeb). The brand names and logos above stay their owners' trademarks; CTS Office is not affiliated with any of them.

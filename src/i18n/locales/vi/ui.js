@@ -1,8 +1,8 @@
 // The page markup (src/components/office), one group per component. The office's code fills most of it in later.
 export default {
   meta: {
-    title: 'My Office: văn phòng 3D cho các phiên Claude Code',
-    description: 'Mỗi phiên Claude Code là một nhân vật ngồi bàn trong văn phòng 3D. Duyệt quyền, xem RAM và hạn mức gói, biết từng agent đang làm gì. Miễn phí, mã nguồn mở.',
+    title: 'CTS Office: Văn phòng IT 3D & Khu lưu trú cho Claude, Antigravity & GitHub Actions',
+    description: 'Văn phòng IT 3D kết hợp nơi ở cho các phiên Claude Code, Antigravity (Gemini) và GitHub Actions. Duyệt quyền, theo dõi tài nguyên máy và xem đội ngũ IT làm việc & sinh hoạt.',
   },
   // shared by the replay bar and the timeline panel
   ranges: {
@@ -172,8 +172,8 @@ export default {
   stage: {
     chips: 'Phiên làm việc',
     lite: 'Các phiên dạng danh sách',
-    emptyTitle: 'Chưa có phiên Claude nào đang mở',
-    emptyText: 'Mở Claude Code trong Antigravity, nhân vật sẽ đi vào văn phòng.',
+    emptyTitle: 'Chưa có phiên AI nào đang mở',
+    emptyText: 'Mở Gemini trong Antigravity hoặc Claude Code, nhân vật sẽ đi vào văn phòng.',
   },
   timeline: {
     title: 'Dòng thời gian',

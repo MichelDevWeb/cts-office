@@ -1,1 +1,1 @@
-My Office: a 3D office for your Claude Code sessions
+CTS Office: Live 3D IT Workspace & Co-living for Antigravity (Gemini), Claude Code & GitHub Actions.

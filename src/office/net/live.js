@@ -8,7 +8,7 @@ import { CHAIR_IDLE, DESKS, PODS, UNITS, chairs, unitOfDesk } from '../world/des
 import { canvasTex } from '../scene/blocks.js';
 import { DEPTS } from '../world/layout.js';
 import { DEPT_SIGNS } from '../world/pro/wing.js';
-import { PALETTE, addWorker, dn, dropSub, hash, leaving, leavingIds, sessions, spawnSub, subs, trimLeaving, workers } from '../people/workers.js';
+import { PALETTE, addWorker, dn, dropSub, hash, itRoleOf, leaving, leavingIds, sessions, spawnSub, subs, trimLeaving, workers } from '../people/workers.js';
 import { queueUi } from '../ui/activity.js';
 import { closeSession } from '../ui/session-drawer.js';
 import { t as tr } from '../../i18n/index.js';
@@ -102,6 +102,7 @@ export function upsertSession(s, walkIn = true) {
     for (const [aid, sw] of subs) if (sw.parent === w && !live.has(aid)) dropSub(aid);
     for (const x of s.subs || []) { if (!subs.has(x.id)) spawnSub(w, x.id, x.type); const sw = subs.get(x.id); if (sw && x.desc) sw.desc = x.desc; sw?.setModel(x.model); }
     w.setTeam([...subs.values()].filter((x) => x.parent === w).length);
+    w.setRole(itRoleOf(s));
     w.setAcct(s.acct);
     w.setStuck(s.stuck);
   }

@@ -29,6 +29,10 @@
 .tag-model[data-family="sonnet"] { background: rgba(92, 160, 230, .25); color: #A9D0F7; }
 .tag-model[data-family="haiku"] { background: rgba(96, 196, 140, .25); color: #A6E3C0; }
 .tag-team { margin-left: 2px; padding: 2px 7px; border-radius: 999px; background: rgba(106, 174, 255, .18); color: #A9CCFF; font-size: 10px; font-weight: 700; }
+.tag-role { margin-left: 3px; padding: 2px 6px; border-radius: 999px; background: linear-gradient(135deg, rgba(37, 99, 235, .32) 0%, rgba(6, 182, 212, .28) 100%); border: 1px solid rgba(56, 189, 248, .4); color: #BAE6FD; font-size: 9.5px; font-weight: 700; letter-spacing: .02em; }
+.tag-role[data-role="devops"] { background: rgba(32, 136, 255, .28); border-color: rgba(96, 165, 250, .5); color: #93C5FD; }
+.tag-role[data-role="ai"] { background: linear-gradient(135deg, rgba(66, 133, 244, .32), rgba(155, 114, 203, .32)); border-color: rgba(167, 139, 250, .5); color: #DDD6FE; }
+.tag-role[data-role="lead"] { background: rgba(245, 158, 11, .24); border-color: rgba(251, 191, 36, .45); color: #FDE68A; }
 .tag { transition: margin-top .2s ease-out, opacity .2s; }
 .bubble { transition: opacity .2s, margin-bottom .2s ease-out; }
 .bubble--wait .b-ico { background: var(--amber-soft); color: var(--amber); }

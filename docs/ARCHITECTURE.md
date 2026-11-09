@@ -1,17 +1,14 @@
-# Architecture
+# CTS Office Architecture
 
-My Office is two programs in one repository:
+CTS Office is two programs in one repository (`https://github.com/MichelDevWeb/cts-office`):
 
-1. **A local server** (`server/`, plain Node.js ESM, no build step). Claude Code hooks POST every event to it; it keeps one
-   record per open session, measures the Mac, and streams compact events to the page over Server-Sent Events. It also
-   hosts Next.js, which renders the page.
-2. **The office** (`app/`, `src/`). A Next.js App Router page whose markup is static React components; the 3D office and
-   all its panels are driven by plain JavaScript modules in `src/office/`, written against three.js.
+1. **A local server** (`server/`, plain Node.js ESM, no build step). It receives Claude Code hooks, scans native Antigravity (Gemini) conversation transcripts (`~/.gemini/antigravity/brain/<cid>/.system_generated/logs/transcript.jsonl`), polls GitHub Actions CI (`gh`), keeps one record per open session, measures the Mac, and streams compact events to the page over Server-Sent Events. It also hosts Next.js, which renders the page.
+2. **The office** (`app/`, `src/`). A Next.js App Router page whose markup is static React components; the 3D IT office & co-living quarters and all its panels are driven by plain JavaScript modules in `src/office/`, written against three.js.
 
 ```
 Claude Code ──hooks (curl, loopback only)──▶ server/index.mjs ──SSE /stream──▶ the page (src/office)
-                                               │   ▲                               │
-                    ~/.claude/sessions, transcripts   /api/* (sys, log, timeline, replay, todos, perm…)
+Antigravity (Gemini) ──~/.gemini/antigravity/brain──▲    │   ▲                               │
+                     ~/.claude/sessions, transcripts     /api/* (sys, log, timeline, replay, todos, perm…)
 Claude Code ──OpenTelemetry (OTLP/HTTP JSON)──▶ /v1/metrics, /v1/logs ──▶ server/otel.mjs ──/api/burn──▶ "What eats your plan"
 ```
 
@@ -265,6 +262,7 @@ engine switches to demo mode and talks to no API.
 | `world/furniture/server-racks.js` | 65 | Server racks with LEDs and fans that follow the Mac's CPU. |
 | `world/layout.js` | 43 | The floor plans (cozy, pro, hq): where the shared furniture stands, and the headquarters wing. |
 | `world/pro/floor.js` | 347 | The company floor: rooms, partitions and furniture. |
+| `world/pro/living.js` | 215 | CTS Co-living & Wellness wing: sleep pods, shower & laundry room, IT gym, and 24/7 energy drink cooler. |
 | `world/pro/pieces.js` | 142 | Company floor building pieces: floor finishes, walls, glass, chairs, dining sets. |
 | `world/pro/wing.js` | 134 | Headquarters' wing: in front of the company floor, a corridor along it, a corridor down the middle and four department rooms of two pods each (the desks, pods' screens and carpets come from the shared code). |
 | `world/props/aquarium.js` | 44 | The aquarium. |

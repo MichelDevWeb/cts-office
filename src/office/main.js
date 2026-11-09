@@ -28,6 +28,7 @@ import * as worldFurniturePlantsLamps from './world/furniture/plants-lamps.js';
 import * as worldPropsTrinkets from './world/props/trinkets.js';
 import * as worldProPieces from './world/pro/pieces.js';
 import * as worldProFloor from './world/pro/floor.js';
+import * as worldProLiving from './world/pro/living.js';
 import * as worldProWing from './world/pro/wing.js';
 import * as worldPropsAquarium from './world/props/aquarium.js';
 import * as worldPropsArcade from './world/props/arcade.js';
@@ -150,6 +151,7 @@ const MODULES = [
   worldPropsTrinkets,
   worldProPieces,
   worldProFloor,
+  worldProLiving,
   worldProWing,
   worldPropsAquarium,
   worldPropsArcade,

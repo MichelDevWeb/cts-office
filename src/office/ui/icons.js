@@ -5,7 +5,7 @@ const ICONS = {
   play: '<polygon points="7 4 20 12 7 20 7 4" fill="currentColor"/>',
   pause: '<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>',
   rec: '<circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/>',
-  logo: '<path fill="currentColor" stroke="none" fill-rule="evenodd" d="M7 2h10a3 3 0 0 1 3 3v17H4V5a3 3 0 0 1 3-3zM7.5 6h3v3h-3zM13.5 6h3v3h-3zM7.5 11h3v3h-3zM13.5 11h3v3h-3zM10.2 17h3.6v5h-3.6z"/>',   // (OFFICE_MARK, world/pro/pieces.js)
+  logo: '<polygon points="12 2.5 20.5 7.2 12 11.9 3.5 7.2" fill="currentColor" stroke="none"/><path fill="currentColor" stroke="none" fill-rule="evenodd" d="M3.5 8.6 11.2 12.9V21.5L3.5 17.2V8.6ZM6 11.8v2.1l3.2 1.8v-2.1L6 11.8ZM6 15.2v2.1l3.2 1.8v-2.1L6 15.2Z"/><path fill="currentColor" stroke="none" fill-rule="evenodd" opacity="0.78" d="M20.5 8.6 12.8 12.9V21.5L20.5 17.2V8.6ZM18 11.8l-3.2 1.8v2.1l3.2-1.8v-2.1ZM18 15.2l-3.2 1.8v2.1l3.2-1.8v-2.1Z"/>',   // (CTS_OFFICE_MARK)
   terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
   search: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',

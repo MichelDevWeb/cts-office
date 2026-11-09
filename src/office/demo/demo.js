@@ -26,21 +26,21 @@ export let DEMO;
 function demoProjects() {
   const d = (k) => tr(`demo.tasks.${k}`);
   return [
-    { name: 'shop-api', dir: '~/projects/shop-api', tasks: [
+    { name: 'shop-api', agent: 'claude', role: 'Tech Lead', roleKind: 'lead', dir: '~/projects/shop-api', tasks: [
       { prompt: d('cart.prompt'), steps: [['read', 'src/routes/cart.ts'], ['grep', 'paginate'], ['edit', 'src/routes/cart.ts'], ['test', d('cart.test'), 'fail', 'npm test'], ['edit', 'src/routes/cart.test.ts'], ['test', d('cart.retest'), 'ok', 'npm test']], wait: d('cart.wait') },
       { prompt: d('shipping.prompt'), steps: [['grep', 'shippingFee'], ['read', 'src/lib/shipping.ts'], ['edit', 'src/lib/shipping.ts'], ['test', d('shipping.test'), null, 'vitest']], deploy: 'v2.4.1' } ] },
-    { name: 'landing-page', dir: '~/projects/landing-page', tasks: [
+    { name: 'landing-page', agent: 'antigravity', role: 'Frontend', roleKind: 'dev', dir: '~/projects/landing-page', tasks: [
       { prompt: d('hero.prompt'), steps: [['read', 'app/page.tsx'], ['read', 'components/Hero.tsx'], ['edit', 'components/Hero.tsx'], ['write', 'components/HeroArt.tsx'], ['bash', d('hero.build')], ['fetch', 'dribbble.com']], sub: ['general-purpose', d('hero.sub')] },
       { prompt: d('images.prompt'), steps: [['glob', 'public/**/*.png'], ['bash', d('images.webp')], ['edit', 'next.config.ts'], ['bash', d('images.lighthouse')]] } ] },
-    { name: 'data-pipeline', dir: '~/projects/data-pipeline', tasks: [
+    { name: 'data-pipeline', agent: 'gemini', role: 'AI Eng', roleKind: 'ai', dir: '~/projects/data-pipeline', tasks: [
       { prompt: d('orders.prompt'), steps: [['read', 'etl/orders.py'], ['edit', 'etl/orders.py'], ['test', d('orders.pytest'), null, 'pytest'], ['web', 'pandas drop_duplicates subset']], sub: ['Explore', d('orders.sub')] },
       { prompt: d('schedule.prompt'), steps: [['read', 'airflow/dags/daily.py'], ['edit', 'airflow/dags/daily.py'], ['bash', d('schedule.check')]], wait: d('schedule.wait') } ] },
-    { name: 'mobile-app', dir: '~/projects/mobile-app', tasks: [
+    { name: 'mobile-app', agent: 'claude', role: 'Backend', roleKind: 'dev', dir: '~/projects/mobile-app', tasks: [
       { prompt: d('login.prompt'), steps: [['read', 'src/screens/Login.tsx'], ['web', 'expo auth session google'], ['edit', 'src/screens/Login.tsx'], ['bash', d('login.typecheck')]] },
       { prompt: d('keyboard.prompt'), steps: [['grep', 'KeyboardAvoidingView'], ['edit', 'src/components/Form.tsx'], ['test', d('keyboard.uiTest'), null, 'playwright']] } ] },
-    { name: 'docs-site', dir: '~/projects/docs-site', tasks: [
+    { name: 'docs-site', agent: 'codex', role: 'QA / SDET', roleKind: 'dev', dir: '~/projects/docs-site', tasks: [
       { prompt: d('install.prompt'), steps: [['read', 'docs/intro.md'], ['write', 'docs/install.md'], ['bash', d('install.build')]], deploy: 'docs' } ] },
-    { name: 'infra', dir: '~/projects/infra', tasks: [
+    { name: 'infra', agent: 'github', role: 'DevOps', roleKind: 'devops', dir: '~/projects/infra', tasks: [
       { prompt: d('staging.prompt'), steps: [['read', 'terraform/staging.tf'], ['edit', 'terraform/staging.tf'], ['bash', 'terraform plan']], wait: d('staging.wait') } ] },
   ];
 }
@@ -196,7 +196,7 @@ export function startDemo() {
   state.todos = DEMO_TODOS.map((t) => ({ ...t })); onTodos();
   state.stats = { prompts: 0, read: 0, edit: 0, cmd: 0, deploy: 0 };
   demoProjects().forEach((p, i) => {
-    const s = { usage: { cost: 0.4 + i * 0.9, ctx: i === 0 ? 168000 : 38000 + i * 21000, ctxMax: 200000, model: 'claude-opus-5-5', out: 0 }, id: `demo-${i}`, pid: 52000 + i, name: p.name, dir: p.dir, link: null, desk: i, status: 'rest', lastPrompt: '', taskStart: 0, counts: { read: 0, edit: 0, cmd: 0, web: 0 }, subs: [], doneSubs: [], last: null, lastAt: Date.now() - (i + 1) * 9 * 60e3, todos: demoChecklist(i) || [] };
+    const s = { usage: { cost: 0.4 + i * 0.9, ctx: i === 0 ? 168000 : 38000 + i * 21000, ctxMax: 200000, model: p.agent === 'antigravity' || p.agent === 'gemini' ? 'gemini-3.1-pro' : 'claude-opus-5-5', out: 0 }, id: `demo-${i}`, pid: 52000 + i, name: p.name, agent: p.agent || 'claude', role: p.role || '', roleKind: p.roleKind || 'dev', dir: p.dir, link: null, desk: i, status: 'rest', lastPrompt: '', taskStart: 0, counts: { read: 0, edit: 0, cmd: 0, web: 0 }, subs: [], doneSubs: [], last: null, lastAt: Date.now() - (i + 1) * 9 * 60e3, todos: demoChecklist(i) || [] };
     upsertSession(s, false);
     demoLoop(s, p, i < 4);
   });

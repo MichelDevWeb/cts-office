@@ -1,4 +1,4 @@
-# Contributing to My Office
+# Contributing to CTS Office
 
 Thanks for helping! This guide gets you from a fresh clone to a pull request.
 
@@ -8,18 +8,19 @@ Requirements: Node.js 20.9 or newer, npm, and a browser with WebGL, on macOS, Li
 readings live in `server/platform/` (one module per system, same functions); CI runs `npm run smoke` on all three.
 
 ```bash
-git clone <your fork>
-cd my-office
+git clone https://github.com/MichelDevWeb/cts-office.git
+cd cts-office
 npm install
 npm run dev          # http://localhost:4310 with Turbopack and hot reload
 ```
 
-Open <http://localhost:4310/?demo> to see the office with fictional projects: you don't need Claude Code running.
+Open <http://localhost:4310/?demo> to see the office with fictional projects: you don't need Claude Code or Antigravity running.
 `?layout=pro` or `?layout=cozy` picks the floor plan, `?at=12:10` pretends it is lunchtime, `?season=noel|tet|halloween`
 shows a season's decorations, `?debug` exposes `window.__office` for poking around in the console.
 
-To see your real sessions, connect Claude Code once: `node bin/cli.mjs install` (adds the hooks to
-`~/.claude/settings.json`; `node bin/cli.mjs uninstall` removes them).
+To see your real sessions:
+- **Antigravity (Gemini)**: detected automatically from `~/.gemini/antigravity/brain/`.
+- **Claude Code**: connect once with `node bin/cli.mjs install` (adds the hooks to `~/.claude/settings.json`; `node bin/cli.mjs uninstall` removes them).
 
 ## Scripts
 

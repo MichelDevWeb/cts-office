@@ -7,7 +7,7 @@ export default async function TopBar() {
   const t = await getT();
   return (
     <header className="topbar">
-      <div className="tb-brand"><span className="logo" data-icon="logo"></span><span>My Office</span><span className="tb-clock" id="clock">--:--</span><span className="demo-chip" id="demo-chip" hidden>DEMO<span className="demo-more"> · {t('ui.topBar.sampleData')}</span></span><span className="demo-chip replay-chip" id="replay-chip" hidden></span></div>
+      <div className="tb-brand"><span className="logo" data-icon="logo"></span><span>CTS Office</span><span className="tb-clock" id="clock">--:--</span><span className="demo-chip" id="demo-chip" hidden>DEMO<span className="demo-more"> · {t('ui.topBar.sampleData')}</span></span><span className="demo-chip replay-chip" id="replay-chip" hidden></span></div>
       <div className="tb-view" role="group" aria-label={t('ui.topBar.view')}>
         <button type="button" data-view="3d" aria-pressed="true" title={t('ui.topBar.view3d')}>3D</button>
         <button type="button" data-view="2d" aria-pressed="false" title={t('ui.topBar.view2d')}>2D</button>
