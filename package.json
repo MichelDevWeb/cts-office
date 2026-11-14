@@ -1,6 +1,6 @@
 {
   "name": "cts-office",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "CTS Office: A 3D IT Office & Co-living workspace for Antigravity (Gemini), Claude Code & GitHub Actions sessions, with live Mac monitoring and one-click cleanup.",
   "author": "MichelDevWeb (https://github.com/MichelDevWeb)",
   "license": "MIT",

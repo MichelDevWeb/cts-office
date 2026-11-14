@@ -47,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
     // (on an iPhone's home screen: full screen, its own name; the manifest is app/manifest.ts)
     appleWebApp: { capable: true, title: 'CTS Office', statusBarStyle: 'black-translucent' }, formatDetection: { telephone: false },
     keywords: ['CTS Office', 'Claude Code', 'Antigravity', 'Gemini', 'GitHub Actions', 'AI agents', '3D office', 'developer tools', 'văn phòng 3D'],
-    openGraph: { type: 'website', siteName: 'CTS Office', title, description, locale: lang === 'vi' ? 'vi_VN' : 'en_US', ...(SITE && { url }) },
+    openGraph: { type: 'website', siteName: 'CTS Office', title, description, locale: lang === 'vi' ? 'vi_VN' : lang === 'th' ? 'th_TH' : 'en_US', ...(SITE && { url }) },
     twitter: { card: 'summary_large_image', title, description },
     ...(SITE && { alternates: { canonical: url, languages: { en: at('/'), vi: at('/vi/') } } }),
   };

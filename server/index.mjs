@@ -22,13 +22,14 @@ import { createVault } from './vault.mjs';
 import { MAIN, SUB, modelsOf, withModels, hasSplit, withSplit } from './models.mjs';
 import { createCodexAccounts } from './codex-accounts.mjs';
 import { createAntigravityAccounts, makeDb, windowsOf } from './antigravity-accounts.mjs';
+import { watchAntigravity } from './antigravity-runs.mjs';
 import { report as promptReport } from './prompt-report.mjs';
 import { testCounts, testRunner } from './testrun.mjs';
 import { scanUsage, blankUsage, ctxMax } from './usage.mjs';
 import next from 'next';
 import { buildTimeline } from '../src/shared/timeline.js';
 import { dangerKey } from '../src/shared/danger.js';
-import { holdMs, createBarWatch } from './mac-hold.mjs';
+import { holdPlan, createBarWatch, backAtMac, PHONE_HOLD_MS, BACK_SEC } from './mac-hold.mjs';
 import { createChatEngine, REACTIONS } from '../src/shared/chat-engine.js';
 import { createTasks } from './tasks.mjs';
 import { createBg, bgSettings, printSettings } from './bg-sessions.mjs';
@@ -673,7 +674,9 @@ const rewriter = createRewriter({ claude: () => findClaude(), env: () => { const
 /* ---------- notifications on the phones that said yes (server/push.mjs): Claude's answers, and an approval a run started
    from the office needs while nobody has the office open; none while an office page is looked at ---------- */
 const claudeVersion = createClaudeVersion({ dataDir: DATA_DIR });   // (Claude Code's version on this computer, server/claude-version.mjs)
-const push = createPush({ dataDir: DATA_DIR, log: (l) => fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${l}\n`).catch(() => { }) });
+const push = createPush({ dataDir: DATA_DIR, log: (l) => fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} ${l}\n`).catch(() => {}) });
+// (tests only: a phone that "gets" pushes, each one written to this file as a line of JSON)
+if (process.env.OFFICE_PUSH_FAKE) Object.assign(push, { count: () => 1, notify: async (msg) => { await fsp.appendFile(process.env.OFFICE_PUSH_FAKE, `${JSON.stringify(msg)}\n`); return [201]; } });
 const QUICK_FILE = path.join(DATA_DIR, 'quick.json');   // the chat's quick commands, once you change them (shared by the Mac and the phones)
 const pushOut = (msg) => { if (push.count() && !officeFocused()) push.notify(msg).catch(() => { }); };
 
@@ -951,7 +954,9 @@ async function doScan() {
 }
 
 /* ---------- Antigravity (Gemini) native brain session discovery & live transcript tailer ---------- */
-const AG_BRAIN_DIR = process.env.OFFICE_AG_BRAIN_DIR || path.join(HOME, '.gemini', 'antigravity', 'brain');
+const AG_BRAIN_DIRS = process.env.OFFICE_AG_BRAIN_DIR
+  ? process.env.OFFICE_AG_BRAIN_DIR.split(path.delimiter)
+  : ['antigravity', 'antigravity-cli', 'antigravity-ide'].map((d) => path.join(HOME, '.gemini', d, 'brain'));
 const agRootCache = new Map();
 function agArg(v) {
   if (typeof v !== 'string') return v;
@@ -982,9 +987,16 @@ function agUserRequest(content) {
   return m ? m[1].trim() : '';
 }
 function agProjectRoot(filePath) {
-  const p = String(filePath || '').trim();
+  const p = String(filePath || '').replace(/\\ /g, ' ').replace(/['"]+$/g, '').trim();
   if (!p.startsWith('/') || p.includes('/.gemini/') || p.startsWith('/tmp/') || p.startsWith('/var/')) return '';
-  const dir = path.dirname(p);
+  if (p === HOME || p === path.join(HOME, 'Desktop')) return '';
+  let dir = p;
+  try {
+    const st = fs.statSync(p);
+    if (!st.isDirectory()) dir = path.dirname(p);
+  } catch {
+    dir = path.dirname(p);
+  }
   if (agRootCache.has(dir)) return agRootCache.get(dir);
   let cur = dir, gitRoot = '', pkgRoot = '';
   while (cur && cur.length > HOME.length && cur !== path.dirname(cur)) {
@@ -992,7 +1004,7 @@ function agProjectRoot(filePath) {
     if (!pkgRoot && fs.existsSync(path.join(cur, 'package.json'))) pkgRoot = cur;
     cur = path.dirname(cur);
   }
-  const out = gitRoot || pkgRoot || dir;
+  const out = gitRoot || pkgRoot || (dir.length > HOME.length && dir !== path.join(HOME, 'Desktop') ? dir : '');
   agRootCache.set(dir, out);
   return out;
 }
@@ -1004,8 +1016,15 @@ function agDetectCwd(lines) {
     if (Array.isArray(j.tool_calls)) {
       for (const tc of j.tool_calls) {
         const a = agArgs(tc?.args);
-        const r = agProjectRoot(a.Path);
+        const r = agProjectRoot(a.Path || a.Cwd);
         if (r) return r;
+        if (typeof a.CommandLine === 'string') {
+          const matches = a.CommandLine.matchAll(/(?:["'](\/Users\/[^"'\n]+?)["']|(\/Users\/(?:\\ |[^\s"';&|><])+))/g);
+          for (const m of matches) {
+            const r2 = agProjectRoot(m[1] || m[2]);
+            if (r2 && (fs.existsSync(path.join(r2, '.git')) || fs.existsSync(path.join(r2, 'package.json')))) return r2;
+          }
+        }
       }
     }
     if (j.type === 'USER_INPUT' && typeof j.content === 'string') {
@@ -1017,29 +1036,36 @@ function agDetectCwd(lines) {
 }
 async function scanAgSessions() {
   if (AI_OFF || (process.env.OFFICE_CLAUDE_BIN && !process.env.OFFICE_AG_BRAIN_DIR)) return;
-  let dirs = [];
-  try { dirs = await fsp.readdir(AG_BRAIN_DIR); } catch { return; }
   const now = Date.now(), found = [];
-  for (const cid of dirs) {
-    if (!/^[0-9a-f-]{20,64}$/i.test(cid)) continue;
-    const tFile = path.join(AG_BRAIN_DIR, cid, '.system_generated', 'logs', 'transcript.jsonl');
-    const st = await fsp.stat(tFile).catch(() => null);
-    if (st && st.size > 0) found.push({ cid, tFile, mtime: st.mtimeMs, size: st.size });
+  for (const bDir of AG_BRAIN_DIRS) {
+    let dirs = [];
+    try { dirs = await fsp.readdir(bDir); } catch { continue; }
+    const origin = bDir.includes('antigravity-cli') ? 'Antigravity CLI' : 'Antigravity IDE';
+    for (const cid of dirs) {
+      if (!/^[0-9a-f-]{20,64}$/i.test(cid)) continue;
+      const tFile = path.join(bDir, cid, '.system_generated', 'logs', 'transcript.jsonl');
+      const st = await fsp.stat(tFile).catch(() => null);
+      if (st && st.size > 0) found.push({ cid, tFile, mtime: st.mtimeMs, size: st.size, origin });
+    }
   }
   found.sort((a, b) => b.mtime - a.mtime);
-  const recent = found.filter((x) => now - x.mtime < 18 * 3600_000).slice(0, 4);
+  const recent = found.filter((x) => now - x.mtime < 18 * 3600_000).slice(0, 6);
   if (!recent.length && found.length && ag?.out()?.running) recent.push(found[0]);
   const liveAg = new Set();
-  for (const { cid, tFile, mtime, size } of recent) {
+  for (const { cid, tFile, mtime, size, origin } of recent) {
     const key = 'ag:' + cid;
     liveAg.add(key);
+    const dbSess = sessions.get(`antigravity:${cid}`);
+    if (dbSess) dropSession(`antigravity:${cid}`, dbSess);
     let s = sessions.get(key);
     const isInitial = !s;
     if (!s) {
       s = newSession(key);
       s.sid = cid; s.agent = 'antigravity'; s.role = 'AI Eng'; s.roleKind = 'ai';
-      s.fromAg = true; s.origin = 'Antigravity'; s.transcript = tFile; s.agStep = -1;
+      s.fromAg = true; s.origin = origin || 'Antigravity'; s.transcript = tFile; s.agStep = -1;
       sessions.set(key, s); sidToKey.set(cid, key);
+    } else if (origin) {
+      s.origin = origin;
     }
     if (s.agMtime === mtime && s.agSize === size) {
       if (s.status === 'work' && now - Math.max(s.lastEventAt, mtime) > 90_000) {
@@ -1053,7 +1079,7 @@ async function scanAgSessions() {
     const lines = raw.trim().split('\n').filter(Boolean);
     const detectedCwd = agDetectCwd(lines) || s.cwd || ROOT;
     if (detectedCwd && s.cwd !== detectedCwd) { s.cwd = detectedCwd; noteDir(s.cwd); }
-    s.name = `${base(s.cwd) || 'gemini'}-ag`;
+    s.name = `${base(s.cwd) || 'gemini'}-${origin === 'Antigravity CLI' ? 'cli' : 'ag'}`;
     const prevStep = s.agStep ?? -1;
     let maxStep = prevStep, lastJ = null, lastTs = mtime;
     let totalIn = 0, totalCache = 0, totalOut = 0, lastCtx = 0;
@@ -1613,10 +1639,14 @@ const lockMsg = (until) => tr('server.pin.locked', { n: Math.max(1, Math.ceil((u
 
 
 /* ---------- approve / deny from the office ----------
-   A synchronous PermissionRequest hook (curl, at most 50 s) posts here. The request is held only while an office page
-   has focus: pages report focus every 2 s and on blur, so a prompt in the IDE or terminal is never held up by a page
-   nobody is looking at. Unanswered after 45 s, the page blurred, or the hook went away: the reply is empty and Claude
-   Code shows its own prompt as usual. "Always allow" echoes Claude Code's own suggestion back (documented).
+   A synchronous PermissionRequest hook (curl) posts here. The request is held only while an office page has focus:
+   pages report focus every 2 s and on blur, so a prompt in the IDE or terminal is never held up by a page nobody is
+   looking at. Unanswered after 45 s, the page blurred, or the hook went away: the reply is empty and Claude Code shows
+   its own prompt as usual. "Always allow" echoes Claude Code's own suggestion back (documented).
+   Away from the Mac (no key or mouse for 2 minutes) with approving from a phone on and a phone subscribed to push, the
+   phone holds it instead (server/mac-hold.mjs): a push at once, held as long as the hook waits (its X-Office-Wait header,
+   10 minutes since `my-office install` sets it; 45 s for a hook from before), whatever page has focus, and handed back to
+   Claude Code as soon as a key or the mouse moves on the Mac.
    A phone's work running as a background session has a hook of its own that waits (`?long=1`, server/bg-sessions.mjs):
    held with no deadline until answered (on the phone, in the office), whoever looks; its usual hook is answered at once.
    OFFICE_HOLD_MS shortens the 45 s for the tests. */
@@ -1628,13 +1658,61 @@ const officeFocused = () => { const now = Date.now(); for (const p of presence.v
    idle time (tests only). "Approve from the Mac's notifications" off (Settings → More): it never holds. */
 const barWatch = createBarWatch({ idle: () => (process.env.OFFICE_IDLE_SEC !== undefined ? Number(process.env.OFFICE_IDLE_SEC) : process.platform === 'darwin' ? idleSeconds() : Infinity) });
 const macApprove = () => prefs.get('macApprove') !== false;
-const holdFor = () => holdMs({ focused: officeFocused(), barAlive: barWatch.alive(), idleSec: barWatch.idleSec(), pref: macApprove(), normalMs: HOLD_MS });
-const barHolds = () => !officeFocused() && holdFor() > 0;
+const phoneCanAnswer = () => !!prefs.get('phoneApprove') && push.count() > 0;
+const planNow = (idleSec, limit = HOLD_MS) => holdPlan({ focused: officeFocused(), barAlive: barWatch.alive(), idleSec, pref: macApprove(), normalMs: HOLD_MS,
+  phone: phoneCanAnswer(), phoneMs: Math.min(PHONE_HOLD_MS, limit) });
+/** who holds a request coming in now, and how long (the Mac's idle time read again when it is old) */
+const holdNow = async (limit) => planNow(await barWatch.fresh(), limit);
+const barHolds = () => !officeFocused() && planNow(barWatch.idleSec()).by === 'bar';
+/** how long the hook that posted may wait (ms): what its X-Office-Wait header says, less 5 s; a hook from before: 45 s */
+const hookLimit = (req) => { const w = Number(req.headers['x-office-wait']); return Number.isFinite(w) && w > 10 ? Math.min(PHONE_HOLD_MS, (w - 5) * 1000) : HOLD_MS; };
+// a request held for the phone goes back to Claude Code's prompt as soon as the owner is at the Mac again (read every 5 s)
+let backTimer = 0;
+function watchBack() {
+  if (backTimer) return;
+  backTimer = setInterval(async () => {
+    if (![...pending.values()].some((x) => x.phone)) { clearInterval(backTimer); backTimer = 0; return; }
+    const idle = await barWatch.fresh(4000);
+    if (backAtMac(idle)) for (const [id, x] of [...pending]) if (x.phone) giveBack(id, 'back');
+  }, 5000);
+  backTimer.unref?.();
+}
+/** the push for a request held for the phone: whatever page has focus (the owner is away from the Mac) */
+function phonePush(entry, text) {
+  const title = tr(entry.kind === 'ask' ? 'server.push.askTitle' : entry.kind === 'plan' ? 'server.push.planTitle' : 'server.push.waitTitle', { name: entry.name });
+  push.notify({ title, body: clip(text, 180), tag: `perm-${entry.id}`, url: '/', urgent: true }).catch(() => {});
+}
 const pending = new Map();    // request id -> held request
-const permPub = (p) => ({
-  id: p.id, sess: p.sess, name: p.name, tool: p.tool, type: p.type, label: p.label, detail: p.detail, remember: p.remember, at: p.at, until: p.until,
-  kind: p.kind || 'perm', questions: p.questions, plan: p.plan
-});
+/* Handing a request back to Claude Code's own prompt (in the IDE or the terminal: a phone can't answer it there). Each one is
+   written to the actions log with why, and a phone that answers it a moment later is told so (and why) instead of a bare
+   "expired" (server.api.wentBack). */
+const released = new Map();   // request id -> { at, why }: the last 100
+function noteBack(p, why) {
+  released.set(p.id, { at: Date.now(), why }); if (released.size > 100) released.delete(released.keys().next().value);
+  fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} back to Claude Code (${why}) ${p.kind || 'perm'} ${p.name} ${p.tool}${p.phone ? ' (held for the phone)' : ''}\n`).catch(() => {});
+}
+function giveBack(id, why) { const p = pending.get(id); if (!p) return; noteBack(p, why); settlePerm(id); }
+/* A request a page or the menu bar held, its time up or the page no longer looked at: when a phone can answer and nobody
+   is at the Mac (no key or mouse for BACK_SEC), it stays, for the phone (a push, the time its hook allows, back to Claude
+   Code the moment the Mac is touched), not handed to an IDE nobody is in front of. Otherwise back to Claude Code. */
+async function keepForPhone(id, why) {
+  const p = pending.get(id); if (!p || p.long) return;
+  const left = p.at + p.limit - Date.now();
+  if (!p.phone && phoneCanAnswer() && left > 15_000) {
+    const idle = await barWatch.fresh(4000);
+    if (!pending.has(id)) return;   // (answered while the Mac was read)
+    if (Number.isFinite(idle) && idle >= BACK_SEC) {
+      clearTimeout(p.timer); p.phone = true; p.until = p.at + p.limit;
+      p.timer = setTimeout(() => giveBack(id, 'timeout'), p.until - Date.now());
+      broadcast({ k: 'perm', p: permPub(p) });   // (the card's countdown: the phone's time now)
+      phonePush(p, p.pushText); watchBack();
+      return;
+    }
+  }
+  giveBack(id, why);
+}
+const permPub = (p) => ({ id: p.id, sess: p.sess, name: p.name, tool: p.tool, type: p.type, label: p.label, detail: p.detail, remember: p.remember, at: p.at, until: p.until,
+  kind: p.kind || 'perm', questions: p.questions, plan: p.plan });
 function settlePerm(id, body = '') {
   const p = pending.get(id); if (!p) return;
   pending.delete(id); clearTimeout(p.timer);
@@ -1666,33 +1744,29 @@ function longHold(p, long) {
   if (long) return bg ? { task: bg } : { skip: true };   // (its settings, but not a phone's work now: Claude Code goes on as usual)
   return bg?.hooked ? { skip: true } : {};   // (its long-waiting hook carries this one)
 }
-async function onPermission(p, res, long = false) {
+async function onPermission(p, res, long = false, limit = HOLD_MS) {
   const lh = longHold(p, long); if (lh.skip) { res.writeHead(200).end(''); return; }
   // a run started from the office (a phone's work) may wait for a phone to answer even with no office open: they get a push
   const ours = !!p?.session_id && push.count() > 0 && !!prefs.get('phoneApprove') && tasks.list().some((t) => t.sid === p.session_id || t.from?.sid === p.session_id);
-  const hold = holdFor();
+  const plan = long ? { ms: 0, by: null } : await holdNow(limit), hold = plan.ms, forPhone = plan.by === 'phone';
   if (!p || !p.session_id || ASK_TOOLS.has(p.tool_name) || (!hold && !ours && !long)) { res.writeHead(200).end(''); return; }
   let s = bySid(p.session_id); if (!s) { await scanSessions(); s = bySid(p.session_id); }
   const c = await classifyVi(p.tool_name, p.tool_input);
   const suggestion = Array.isArray(p.permission_suggestions) ? p.permission_suggestions.find((x) => x && x.type === 'addRules' && x.behavior === 'allow') || null : null;
   const id = crypto.randomUUID(), now = Date.now();
-  const entry = {
-    id, res, sess: s?.id || null, name: s?.name || base(p.cwd) || 'claude', tool: p.tool_name, type: c.type, label: c.label, detail: permDetail(p),
-    remember: suggestion ? ruleText(suggestion) : null, suggestion, at: now, until: long ? 0 : now + (hold || HOLD_MS), long, task: lh.task?.id || null
-  };
-  if (!long) entry.timer = setTimeout(() => settlePerm(id), hold || HOLD_MS);   // (the long one: until answered, or its hook gives up)
+  const entry = { id, res, sess: s?.id || null, name: s?.name || base(p.cwd) || 'claude', tool: p.tool_name, type: c.type, label: c.label, detail: permDetail(p),
+    remember: suggestion ? ruleText(suggestion) : null, suggestion, at: now, until: long ? 0 : now + (hold || HOLD_MS), long, phone: forPhone, task: lh.task?.id || null,
+    limit: Math.min(PHONE_HOLD_MS, limit), pushText: `${c.label}: ${oneLine(permDetail(p))}` };
+  if (!long) entry.timer = setTimeout(() => keepForPhone(id, 'timeout'), hold || HOLD_MS);   // (the long one: until answered, or its hook gives up)
   pending.set(id, entry);
-  res.on('close', () => { if (pending.get(id) === entry) { pending.delete(id); clearTimeout(entry.timer); broadcast({ k: 'permDone', id }); } });
+  res.on('close', () => { if (pending.get(id) === entry) { noteBack(entry, 'hook'); pending.delete(id); clearTimeout(entry.timer); broadcast({ k: 'permDone', id }); } });
   if (s && s.status !== 'wait') { s.status = 'wait'; broadcast({ k: 'sess', s: pub(s) }); }
   broadcast({ k: 'perm', p: permPub(entry) });
-  if (ours || (long && prefs.get('phoneApprove'))) pushOut({ title: tr('server.push.permTitle', { name: entry.name }), body: clip(`${c.label}: ${oneLine(entry.detail)}`, 180), tag: `perm-${id}`, url: '/', urgent: true });
-  {
-    const run = tasks.list().find((t) => t.sid === p.session_id || t.from?.sid === p.session_id), card = run && cards.get(run.id);
-    if (card) {
-      card.wait = clip(`${c.label}: ${oneLine(entry.detail)}`, 120); chat.setWork(card.id, { state: 'wait', ask: card.wait, perm: id, risky: !!dangerKey(entry), steps: card.steps, n: card.n });   // (perm: its Allow / Deny buttons)
-      res.on('close', () => { if (cards.get(run.id) === card) { card.wait = null; chat.setWork(card.id, { state: 'work', ask: null, perm: null }); } });
-    }
-  }
+  if (forPhone) { phonePush(entry, entry.pushText); watchBack(); }
+  else if (ours || (long && prefs.get('phoneApprove'))) pushOut({ title: tr('server.push.permTitle', { name: entry.name }), body: clip(`${c.label}: ${oneLine(entry.detail)}`, 180), tag: `perm-${id}`, url: '/', urgent: true });
+  { const run = tasks.list().find((t) => t.sid === p.session_id || t.from?.sid === p.session_id), card = run && cards.get(run.id);
+    if (card) { card.wait = clip(`${c.label}: ${oneLine(entry.detail)}`, 120); chat.setWork(card.id, { state: 'wait', ask: card.wait, perm: id, risky: !!dangerKey(entry), steps: card.steps, n: card.n });   // (perm: its Allow / Deny buttons)
+      res.on('close', () => { if (cards.get(run.id) === card) { card.wait = null; chat.setWork(card.id, { state: 'work', ask: null, perm: null }); } }); } }
 }
 
 /* ---------- "Ghi nhớ cho Claude": what you pin for a conversation (the session drawer's "Ghi nhớ" tab), said to Claude
@@ -1779,18 +1853,20 @@ async function undoAct(b, who) {
 
 /* ---------- questions and plans from Claude, answered in the office ----------
    A synchronous PreToolUse hook (matcher AskUserQuestion|ExitPlanMode) posts here, under the same rule as approvals:
-   held only while an office page has focus, 45 s at most, otherwise Claude Code asks as usual. Documented answer
+   held only while an office page has focus, 45 s at most (away from the Mac: for the phone, see above), otherwise
+   Claude Code asks as usual. Documented answer
    (code.claude.com/docs/en/hooks): permissionDecision "allow" with updatedInput = the original input plus `answers`
    (question text -> chosen label, several labels joined with ", "). A plan is approved by allowing ExitPlanMode, or
    sent back with your note by denying it. The page sends indexes; texts are taken from the original input here. */
 const ASK_TOOLS = new Set(['AskUserQuestion', 'ExitPlanMode']);
-async function onQuestion(p, res, long = false) {
+async function onQuestion(p, res, long = false, limit = HOLD_MS) {
   const lh = longHold(p, long); if (lh.skip) { res.writeHead(200).end(''); return; }
-  const hold = holdFor();
+  const plan = long ? { ms: 0, by: null } : await holdNow(limit), hold = plan.ms, forPhone = plan.by === 'phone';
   if (!p || !p.session_id || !ASK_TOOLS.has(p.tool_name) || (!hold && !long)) { res.writeHead(200).end(''); return; }
   let s = bySid(p.session_id); if (!s) { await scanSessions(); s = bySid(p.session_id); }
   const i = p.tool_input || {}, id = crypto.randomUUID(), now = Date.now(), txt = (v, n) => clip(redact(oneLine(v)), n);
-  const entry = { id, res, sess: s?.id || null, name: s?.name || base(p.cwd) || 'claude', tool: p.tool_name, input: i, at: now, until: long ? 0 : now + hold, long, task: lh.task?.id || null };
+  const entry = { id, res, sess: s?.id || null, name: s?.name || base(p.cwd) || 'claude', tool: p.tool_name, input: i, at: now, until: long ? 0 : now + hold, long, phone: forPhone, task: lh.task?.id || null,
+    limit: Math.min(PHONE_HOLD_MS, limit) };
   if (p.tool_name === 'AskUserQuestion') {
     const qs = Array.isArray(i.questions) ? i.questions.slice(0, 4) : [];
     if (!qs.length) { res.writeHead(200).end(''); return; }
@@ -1804,11 +1880,13 @@ async function onQuestion(p, res, long = false) {
     Object.assign(entry, { kind: 'plan', type: 'plan', label: tr('server.tool.plan') });
     entry.plan = clip(redact(String(i.plan || '')), 20000); entry.detail = clip(oneLine(entry.plan), 200);
   }
-  if (!long) entry.timer = setTimeout(() => settlePerm(id), hold);
+  entry.pushText = entry.detail;
+  if (!long) entry.timer = setTimeout(() => keepForPhone(id, 'timeout'), hold);
   pending.set(id, entry);
-  res.on('close', () => { if (pending.get(id) === entry) { pending.delete(id); clearTimeout(entry.timer); broadcast({ k: 'permDone', id }); } });
+  res.on('close', () => { if (pending.get(id) === entry) { noteBack(entry, 'hook'); pending.delete(id); clearTimeout(entry.timer); broadcast({ k: 'permDone', id }); } });
   if (s && s.status !== 'wait') { s.status = 'wait'; broadcast({ k: 'sess', s: pub(s) }); }
   broadcast({ k: 'perm', p: permPub(entry) });
+  if (forPhone) { phonePush(entry, entry.pushText); watchBack(); }
   // a phone's work asking (a background session): its card says so, answered where approvals are; a push if nobody looks
   const card = lh.task && cards.get(lh.task.id);
   if (card) {
@@ -2037,6 +2115,14 @@ function loginAccount(login, file = ACCOUNT_FILE) {
 }
 // Claude Code's sign-in: the login keychain on a Mac, its credentials file elsewhere (server/platform)
 const keychainLogin = () => OS.claudeLogin();
+// no login to read for the main folder: never signed in there (its .claude.json has no account: ~/.claude.json, or the
+// folder's own when CLAUDE_CONFIG_DIR is set), maybe only other accounts are; or signed in, and its token is nowhere
+function loginMissingNote() {
+  let signedIn = false;
+  try { signedIn = !!JSON.parse(fs.readFileSync(process.env.CLAUDE_CONFIG_DIR ? path.join(CLAUDE_DIR, '.claude.json') : path.join(HOME, '.claude.json'), 'utf8')).oauthAccount; } catch { /* none */ }
+  if (signedIn) return ['server.usage.keychain'];
+  return [otherDirs.length ? 'server.usage.mainSignedOutOthers' : 'server.usage.mainSignedOut', { dir: tilde(CLAUDE_DIR) }];
+}
 function usageWindows(j) {
   const out = [], iso = (t) => (t ? Date.parse(t) || null : null);
   for (const l of Array.isArray(j.limits) ? j.limits : []) {
@@ -2067,7 +2153,7 @@ function fetchPlanUsage(force = false) {
   if (Date.now() < usageWait || (!force && planLimits?.source === 'api' && Date.now() - planLimits.at < 110_000)) return Promise.resolve();
   return (planBusy ??= (async () => {
     const login = await keychainLogin();
-    if (!login?.accessToken) { usageNote = ['server.usage.keychain']; return; }
+    if (!login?.accessToken) { usageNote = loginMissingNote(); return; }
     try {
       const r = await fetch('https://api.anthropic.com/api/oauth/usage', { headers: { Authorization: `Bearer ${login.accessToken}`, 'anthropic-beta': 'oauth-2025-04-20' }, signal: AbortSignal.timeout(10000) });
       if (r.status === 429) { usageBackoff = Math.min(30, (usageBackoff || 2.5) * 2); usageWait = Date.now() + Math.max(usageBackoff * 60e3, (Number(r.headers.get('retry-after')) || 0) * 1000); usageNote = ['server.usage.rateLimited', { n: usageBackoff }]; return; }
@@ -2240,8 +2326,13 @@ function findClaude() {
   if (claudeBin && fs.existsSync(claudeBin.file)) return claudeBin;
   const home = os.homedir(), exe = process.platform === 'win32' ? 'claude.exe' : 'claude', isFile = (f) => { try { return fs.statSync(f).isFile(); } catch { return false; } };
   if (process.env.OFFICE_CLAUDE_BIN && isFile(process.env.OFFICE_CLAUDE_BIN)) return (claudeBin = { file: process.env.OFFICE_CLAUDE_BIN, onPath: false });
-  for (const d of String(process.env.PATH || '').split(path.delimiter)) if (d && isFile(path.join(d, exe))) return (claudeBin = { file: path.join(d, exe), onPath: true });
-  for (const f of [path.join(home, '.local', 'bin', exe), path.join(home, '.claude', 'local', exe), '/opt/homebrew/bin/claude', '/usr/local/bin/claude', path.join(home, '.npm-global', 'bin', exe), path.join(home, '.bun', 'bin', exe)]) if (isFile(f)) return (claudeBin = { file: f, onPath: false });
+  // Windows npm installs put only claude.cmd on the PATH; the real exe sits in that folder's node_modules
+  const npmExe = (d) => path.join(d, 'node_modules', '@anthropic-ai', 'claude-code', 'bin', exe);
+  for (const d of String(process.env.PATH || '').split(path.delimiter)) {
+    if (d && isFile(path.join(d, exe))) return (claudeBin = { file: path.join(d, exe), onPath: true });
+    if (d && process.platform === 'win32' && isFile(npmExe(d))) return (claudeBin = { file: npmExe(d), onPath: true });
+  }
+  for (const f of [...(process.env.APPDATA ? [npmExe(path.join(process.env.APPDATA, 'npm'))] : []), path.join(home, '.local', 'bin', exe), path.join(home, '.claude', 'local', exe), '/opt/homebrew/bin/claude', '/usr/local/bin/claude', path.join(home, '.npm-global', 'bin', exe), path.join(home, '.bun', 'bin', exe)]) if (isFile(f)) return (claudeBin = { file: f, onPath: false });
   const ver = (f) => (/claude-code-(\d+)\.(\d+)\.(\d+)/.exec(f) || [0, 0, 0, 0]).slice(1).reduce((a, n) => a * 1000 + Number(n), 0), found = [];
   for (const ide of ['.vscode', '.vscode-insiders', '.cursor', '.windsurf', '.antigravity', '.antigravity-ide', '.kiro', '.trae', '.positron']) {
     try { for (const e of fs.readdirSync(path.join(home, ide, 'extensions'))) if (/^anthropic\.claude-code-/.test(e)) found.push(path.join(home, ide, 'extensions', e, 'resources', 'native-binary', exe)); } catch { /* not installed */ }
@@ -2666,6 +2757,30 @@ const codex = AI_OFF ? null : createCodexAccounts({
       + (older.length ? ` ${tr('chat.ai.codexReload', { where: [...new Set(older)].join(', ') })}` : ''));
   },
 });
+// Antigravity's agent at a desk while its conversation file keeps changing; the 2 s tick rests it after 20 quiet seconds.
+if (!AI_OFF && process.env.OFFICE_AG_RUNS !== '0') watchAntigravity({
+  dirs: process.env.OFFICE_AG_DIRS?.split(path.delimiter) || ['antigravity', 'antigravity-cli', 'antigravity-ide'].map((d) => path.join(os.homedir(), '.gemini', d, 'conversations')),
+  onActive: ({ id, dir, mtime }) => {
+    const agSess = sessions.get(`ag:${id}`);
+    if (agSess) {
+      if (agSess.status !== 'work') agSess.taskStart = mtime;
+      agSess.status = 'work'; agSess.busy = true; agSess.lastEventAt = Math.max(agSess.lastEventAt, mtime);
+      broadcast({ k: 'sess', s: pub(agSess) });
+      scanAgSessions().catch(() => {});
+      return;
+    }
+    scanAgSessions().catch(() => {});
+    const key = `antigravity:${id}`; let s = sessions.get(key);
+    if (!s) {
+      s = newSession(key); s.agent = 'antigravity'; s.provider = 'antigravity'; s.sid = id; s.outcome = 'unknown';
+      s.name = dir.includes('antigravity-cli') ? 'Antigravity CLI' : dir.includes('antigravity-ide') ? 'Antigravity IDE' : 'Antigravity';
+      sessions.set(key, s);
+    }
+    if (s.status !== 'work') s.taskStart = mtime;
+    s.status = 'work'; s.lastEventAt = mtime;
+    broadcast({ k: 'sess', s: pub(s) });
+  },
+});
 // Antigravity IDE: its state database and whether it is open (on a Mac: closed and opened again through `open`/osascript)
 const AG_APP = process.env.OFFICE_AG_APP || 'Antigravity IDE';
 const AG_DOT = '.' + AG_APP.toLowerCase().replace(/\s+/g, '-');   // (its folder of extensions: where its Claude Code sessions run from)
@@ -2857,7 +2972,7 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === 'POST' && url.pathname === '/hook/question') {
     if (!isLoopback(req) || req.headers.origin) { res.writeHead(403).end(); return; }
-    readJson(req, 4_000_000).then((p) => onQuestion(p, res, url.searchParams.get('long') === '1')).catch(() => { try { res.writeHead(200).end(''); } catch { /* gone */ } });
+    readJson(req, 4_000_000).then((p) => onQuestion(p, res, url.searchParams.get('long') === '1', hookLimit(req))).catch(() => { try { res.writeHead(200).end(''); } catch { /* gone */ } });
     return;
   }
   if (req.method === 'POST' && url.pathname === '/hook/bind') {   // a session the office started, saying which it is and where its inbox is (server/bg-sessions.mjs)
@@ -2897,7 +3012,7 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === 'POST' && url.pathname === '/hook/permission') {
     if (!isLoopback(req) || req.headers.origin) { res.writeHead(403).end(); return; }
-    readJson(req, 4_000_000).then((p) => onPermission(p, res, url.searchParams.get('long') === '1')).catch(() => { try { res.writeHead(200).end(''); } catch { /* gone */ } });
+    readJson(req, 4_000_000).then((p) => onPermission(p, res, url.searchParams.get('long') === '1', hookLimit(req))).catch(() => { try { res.writeHead(200).end(''); } catch { /* gone */ } });
     return;
   }
   if (!hostAllowed(req)) { res.writeHead(421).end(); return; }
@@ -2941,7 +3056,7 @@ const server = http.createServer((req, res) => {
       if (url.pathname === '/api/presence') {
         const page = String(b.page || '').slice(0, 64);
         if (b.focused) presence.set(page, { focused: true, at: Date.now() }); else presence.delete(page);
-        if (!officeFocused() && !barHolds()) for (const [id, x] of [...pending]) if (!x.long) settlePerm(id);   // nobody is looking: give the prompt back (a background session's waits on)
+        if (!officeFocused() && !barHolds()) for (const [id, x] of [...pending]) if (!x.long && !x.phone) keepForPhone(id, 'blur');   // nobody is looking: give the prompt back (a background session's waits on, and one held for the phone)
         json(res, 200, { ok: true, pending: pending.size });
         return;
       }
@@ -2949,8 +3064,9 @@ const server = http.createServer((req, res) => {
       let CHOICES = { perm: ['allow', 'always', 'deny'], ask: ['answer', 'skip'], plan: ['approve', 'revise', 'skip'] }[p?.kind || 'perm'];
       if (phone && p) CHOICES = (p.kind || 'perm') !== 'perm' ? CHOICES : dangerKey(p) ? ['deny', 'skip'] : ['allow', 'deny', 'skip'];
       if (phone && p && !CHOICES.includes(b.choice)) { json(res, 403, { ok: false, message: tr('server.api.riskyOnMac') }); return; }
-      if (!p || !CHOICES.includes(b.choice)) { json(res, 404, { ok: false, message: tr('server.api.expired') }); return; }
-      if (b.choice === 'skip') { settlePerm(p.id); json(res, 200, { ok: true }); return; }   // Claude Code asks in the IDE as usual
+      if (!p) { const r = released.get(String(b.id || '')); json(res, 404, { ok: false, message: r ? tr('server.api.wentBack', { time: hhmmOf(r.at), why: tr(`server.api.why.${r.why}`) }) : tr('server.api.expired') }); return; }
+      if (!CHOICES.includes(b.choice)) { json(res, 404, { ok: false, message: tr('server.api.expired') }); return; }
+      if (b.choice === 'skip') { giveBack(p.id, 'skip'); json(res, 200, { ok: true }); return; }   // Claude Code asks in the IDE as usual
       const out = p.kind === 'ask' ? askDecision(p, b) : p.kind === 'plan' ? planDecision(p, b.choice, b.note) : permDecision(p, b.choice);
       if (!out) { json(res, 400, { ok: false, message: tr('server.api.answerAll') }); return; }
       settlePerm(p.id, JSON.stringify(out));
@@ -3160,8 +3276,8 @@ const server = http.createServer((req, res) => {
       const p = pending.get(String(b?.id || '')), choice = b?.choice;
       if (!p || (p.kind || 'perm') !== 'perm' || !['allow', 'deny', 'skip'].includes(choice)) { json(res, 404, { ok: false, message: tr('server.api.expired') }); return; }
       if (choice === 'allow' && dangerKey(p)) { json(res, 403, { ok: false, message: tr('server.api.riskyOnMac') }); return; }   // (a risky command: two clicks, in the office)
-      if (choice === 'skip') settlePerm(p.id); else settlePerm(p.id, JSON.stringify(permDecision(p, choice)));
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} notification perm ${choice} ${p.name} ${p.tool} ${p.detail.slice(0, 120)}\n`).catch(() => { });
+      if (choice === 'skip') giveBack(p.id, 'skip'); else settlePerm(p.id, JSON.stringify(permDecision(p, choice)));
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} notification perm ${choice} ${p.name} ${p.tool} ${p.detail.slice(0, 120)}\n`).catch(() => {});
       json(res, 200, { ok: true });
     });
     return;
@@ -3171,8 +3287,8 @@ const server = http.createServer((req, res) => {
     if (req.method !== 'POST') { json(res, 200, { ok: true, on: macApprove() }); return; }
     readJson(req).then((b) => {
       prefs.set('macApprove', b?.on === false ? false : undefined);
-      if (b?.on === false && !officeFocused()) for (const [id, x] of [...pending]) if (!x.long) settlePerm(id);   // (nobody else holds them now)
-      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} mac notification approve ${macApprove() ? 'on' : 'off'}\n`).catch(() => { });
+      if (b?.on === false && !officeFocused()) for (const [id, x] of [...pending]) if (!x.long && !x.phone) keepForPhone(id, 'macoff');   // (nobody else holds them now)
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} mac notification approve ${macApprove() ? 'on' : 'off'}\n`).catch(() => {});
       json(res, 200, { ok: true, on: macApprove() });
     });
     return;
