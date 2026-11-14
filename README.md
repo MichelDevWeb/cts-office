@@ -591,6 +591,7 @@ node bin/cli.mjs doctor              # checks Node, the server, Antigravity/Clau
 | `OFFICE_USAGE` | on | `0` stops reading your plan's usage. |
 | `OFFICE_CI` | on | `0` stops checking CI runs with `gh`. |
 | `OFFICE_TRANSLATE` | on | `0` leaves Claude's English descriptions untranslated in Vietnamese mode. |
+| `OFFICE_IDLE_SHUTDOWN_MIN` | `30` | Minutes with no open office tab before warning (5m prior) and auto-stopping the server (`0` disables). |
 
 ## Development
 

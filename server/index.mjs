@@ -3443,6 +3443,7 @@ const server = http.createServer((req, res) => {
     const local = isLoopback(req);
     const client = { res };
     clients.add(client);
+    lastActiveAt = Date.now(); idleWarned = false;
     fetchPlanUsage();   // skipped when the saved reading is fresh
     pollGit().then(() => git.pollCi());
     scanSessions().then(() => send(res, snapNow(local)));
@@ -3799,6 +3800,50 @@ function stopTunnel() {
 // (the office stopping: cloudflared keeps going for when it comes back; staying awake ends with it, caffeinate -w)
 process.on('exit', () => { try { awakeProc?.kill(); } catch { /* gone */ } otel.saveSync(); });
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => process.exit(0));
+
+/* ---------- 30-minute idle warning & auto-shutdown (OFFICE_IDLE_SHUTDOWN_MIN, default 30; 0 to disable) ----------
+   When no browser tab or phone has CTS Office open and no approval/task is running, warns 5 minutes before
+   shutting down (at 25 minutes) via macOS notification + console, then exits cleanly at 30 minutes to free RAM. */
+const IDLE_SHUTDOWN_MIN = process.env.OFFICE_IDLE_SHUTDOWN_MIN !== undefined ? Number(process.env.OFFICE_IDLE_SHUTDOWN_MIN) : 30;
+let lastActiveAt = Date.now(), idleWarned = false;
+function macNotify(title, body) {
+  if (process.platform !== 'darwin') return;
+  const script = `display notification ${JSON.stringify(body)} with title ${JSON.stringify(title)} sound name "Glass"`;
+  execFile('osascript', ['-e', script], { timeout: 4000 }, () => { });
+}
+if (IDLE_SHUTDOWN_MIN > 0) {
+  const warnMin = Math.max(1, IDLE_SHUTDOWN_MIN - 5);
+  setInterval(() => {
+    if (watching() || pending.size > 0 || tasks.list().length > 0) {
+      lastActiveAt = Date.now();
+      idleWarned = false;
+      return;
+    }
+    const idleMs = Date.now() - lastActiveAt;
+    if (!idleWarned && idleMs >= warnMin * 60_000 && idleMs < IDLE_SHUTDOWN_MIN * 60_000) {
+      idleWarned = true;
+      const left = Math.max(1, Math.round((IDLE_SHUTDOWN_MIN * 60_000 - idleMs) / 60_000));
+      const vi = prefs.lang() === 'vi';
+      const title = vi ? 'CTS Office · Cảnh báo tự tắt' : 'CTS Office · Idle warning';
+      const body = vi
+        ? `Không có tab nào mở trong ${warnMin} phút. Server sẽ tự tắt sau ${left} phút để giải phóng RAM (mở localhost:${PORT} để giữ).`
+        : `No office tab open for ${warnMin}m. Server will auto-shutdown in ${left}m to free RAM (open localhost:${PORT} to keep alive).`;
+      console.log(`[cts-office] ${body}`);
+      macNotify(title, body);
+      pushOut({ title, body, tag: 'idle-warn', url: '/' });
+    } else if (idleMs >= IDLE_SHUTDOWN_MIN * 60_000) {
+      const vi = prefs.lang() === 'vi';
+      const title = vi ? 'CTS Office · Đã tự động tắt' : 'CTS Office · Auto-stopped';
+      const body = vi
+        ? `Server CTS Office đã tự tắt sau ${IDLE_SHUTDOWN_MIN} phút không sử dụng để tiết kiệm RAM.`
+        : `CTS Office server stopped after ${IDLE_SHUTDOWN_MIN}m of inactivity to save RAM.`;
+      console.log(`[cts-office] ${body}`);
+      macNotify(title, body);
+      fsp.appendFile(ACTION_LOG, `${new Date().toISOString()} auto-shutdown after ${IDLE_SHUTDOWN_MIN}m idle\n`).catch(() => { });
+      setTimeout(() => process.exit(0), 600).unref();
+    }
+  }, 30_000).unref();
+}
 
 server.listen(PORT, HOST, () => {
   syncLan();
