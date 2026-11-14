@@ -38,7 +38,7 @@ export function serviceFor({ root, server, log, host, port }) {
   <key>EnvironmentVariables</key><dict>${xmlEnv}</dict>
   <key>WorkingDirectory</key><string>${root}</string>
   <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
   <key>StandardOutPath</key><string>${log}</string>
   <key>StandardErrorPath</key><string>${log}</string>
 </dict>
